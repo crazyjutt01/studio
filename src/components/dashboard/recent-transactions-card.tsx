@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -14,10 +16,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { transactions, categoryIcons } from '@/lib/data';
+import { categoryIcons, type Transaction } from '@/lib/data';
 import type { LucideIcon } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export function RecentTransactionsCard() {
+interface RecentTransactionsCardProps {
+  transactions: Transaction[] | null;
+}
+
+export function RecentTransactionsCard({ transactions }: RecentTransactionsCardProps) {
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
@@ -37,23 +44,40 @@ export function RecentTransactionsCard() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.slice(0, 5).map((transaction) => {
+            {!transactions &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-6 w-24" />
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Skeleton className="h-6 w-16" />
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Skeleton className="h-6 w-20" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Skeleton className="h-6 w-12 ml-auto" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            {transactions && transactions.slice(0, 5).map((transaction) => {
               const Icon = categoryIcons[transaction.category] as LucideIcon;
               return (
                 <TableRow key={transaction.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                        <span className="hidden sm:inline-flex p-2 bg-muted rounded-md items-center justify-center">
-                            <Icon className="w-4 h-4 text-muted-foreground" />
-                        </span>
-                        <div className="font-medium">{transaction.merchant}</div>
+                      <span className="hidden sm:inline-flex p-2 bg-muted rounded-md items-center justify-center">
+                        {Icon ? <Icon className="w-4 h-4 text-muted-foreground" /> : null}
+                      </span>
+                      <div className="font-medium">{transaction.description}</div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Badge variant="outline">{transaction.category}</Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {transaction.date}
+                    {new Date(transaction.date).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     ${transaction.amount.toFixed(2)}

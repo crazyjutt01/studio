@@ -18,16 +18,16 @@ import {
 import { usePathname } from 'next/navigation';
 
 const menuItems = [
-  { href: '#', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '#', icon: ReceiptText, label: 'SpendSpy' },
-  { href: '#', icon: CircleDollarSign, label: 'BudgetBot' },
-  { href: '#', icon: Target, label: 'GoalGuru' },
-  { href: '#', icon: BotMessageSquare, label: 'AdvisorAI' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/spend-spy', icon: ReceiptText, label: 'SpendSpy' },
+  { href: '/budget-bot', icon: CircleDollarSign, label: 'BudgetBot' },
+  { href: '/goal-guru', icon: Target, label: 'GoalGuru' },
+  { href: '/advisor-ai', icon: BotMessageSquare, label: 'AdvisorAI' },
 ];
 
 const secondaryMenuItems = [
     { href: '#', icon: LifeBuoy, label: 'Help & Support' },
-    { href: '#', icon: ShieldAlert, label: 'CrisisGuardian' },
+    { href: '/crisis-guardian', icon: ShieldAlert, label: 'CrisisGuardian' },
     { href: '#', icon: Settings, label: 'Settings' },
 ]
 

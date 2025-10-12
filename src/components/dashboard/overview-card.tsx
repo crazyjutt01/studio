@@ -1,6 +1,5 @@
 'use client';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import type { LucideIcon } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -9,14 +8,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { categoryIcons } from '@/lib/data';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 
 type OverviewCardProps = {
   categoryData: {
     name: string;
     total: number;
-    icon: string;
   }[];
   totalSpending: number;
 };

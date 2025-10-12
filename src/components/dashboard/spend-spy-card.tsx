@@ -15,6 +15,9 @@ import { recordExpense, type RecordExpenseOutput } from '@/ai/flows/spend-spy-ex
 import { Loader2, UploadCloud, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Transaction } from '@/lib/data';
 
 export function SpendSpyCard() {
   const [isDragging, setIsDragging] = useState(false);
@@ -24,6 +27,8 @@ export function SpendSpyCard() {
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   const handleFileChange = (file: File) => {
     if (!file) return;
@@ -44,6 +49,21 @@ export function SpendSpyCard() {
       try {
         const output = await recordExpense({ receiptDataUri: dataUri });
         setResult(output);
+        if (user && firestore) {
+            const transactionData: Omit<Transaction, 'id'> = {
+                date: output.expenseDetails.date,
+                amount: output.expenseDetails.amount,
+                description: output.expenseDetails.merchant,
+                category: output.expenseDetails.category as Transaction['category'],
+                userId: user.uid,
+            };
+            const transactionsCol = collection(firestore, `users/${user.uid}/transactions`);
+            addDocumentNonBlocking(transactionsCol, transactionData);
+             toast({
+                title: 'Expense Recorded',
+                description: `${output.expenseDetails.merchant} for $${output.expenseDetails.amount} has been added.`,
+             });
+        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         setError(errorMessage);
@@ -136,7 +156,7 @@ export function SpendSpyCard() {
         ) : (
             <div className="space-y-4">
                 <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                    <Image src={preview} alt="Receipt preview" layout="fill" objectFit="contain" />
+                    <Image src={preview} alt="Receipt preview" fill={true} objectFit="contain" />
                 </div>
                 {isLoading && (
                     <div className="flex items-center justify-center text-muted-foreground">

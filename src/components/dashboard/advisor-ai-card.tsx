@@ -1,4 +1,5 @@
-import { advisorAIWeeklySummary } from '@/ai/flows/advisor-ai-weekly-summary';
+'use client';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -9,60 +10,133 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { BotMessageSquare, Loader2, Send } from 'lucide-react';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { getWeeklySpendingForAI } from '@/lib/data';
-import { BotMessageSquare, Send } from 'lucide-react';
+import type { Transaction } from '@/lib/data';
+import { advisorAIWeeklySummary } from '@/ai/flows/advisor-ai-weekly-summary';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 
-async function AdvisorAISummary() {
-    let summaryText = "Could not generate summary at this time.";
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+export function AdvisorAICard({ isPage }: { isPage?: boolean }) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const transactionsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(firestore, `users/${user.uid}/transactions`));
+  }, [user, firestore]);
+
+  const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || !transactionsData) return;
+
+    const userMessage: Message = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
     try {
-        const weeklyData = getWeeklySpendingForAI();
-        const summary = await advisorAIWeeklySummary({ weeklySpendingData: weeklyData });
-        summaryText = summary.summary;
+      const weeklyData = getWeeklySpendingForAI(transactionsData);
+      const result = await advisorAIWeeklySummary({ weeklySpendingData: weeklyData, question: input });
+      const assistantMessage: Message = { role: 'assistant', content: result.summary };
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-        console.error("Failed to get AdvisorAI summary:", error);
+      console.error('Failed to get AdvisorAI summary:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, I had trouble getting a response. Please try again.',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    return (
-        <div className="text-sm text-muted-foreground p-4 bg-secondary/50 rounded-lg border">
-            <p>{summaryText}</p>
-        </div>
-    );
-}
-
-export function AdvisorAICard() {
   return (
-    <Card className="flex flex-col">
+    <Card className={cn("flex flex-col", isPage ? "h-[75vh]" : "")}>
       <CardHeader>
         <div className="flex items-center gap-2">
-            <BotMessageSquare className="h-6 w-6 text-primary"/>
-            <CardTitle>AdvisorAI</CardTitle>
+          <BotMessageSquare className="h-6 w-6 text-primary" />
+          <CardTitle>AdvisorAI</CardTitle>
         </div>
-        <CardDescription>
-          Your weekly summary and financial Q&A.
-        </CardDescription>
+        <CardDescription>Your weekly summary and financial Q&A.</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
-        <h3 className="font-medium mb-2 text-sm">Weekly Spending Summary</h3>
-        <AdvisorAISummary />
+      <CardContent className="flex-grow flex flex-col gap-4">
+        <ScrollArea className="flex-grow pr-4 -mr-4">
+            <div className="space-y-4">
+                {messages.map((message, index) => (
+                <div
+                    key={index}
+                    className={cn(
+                    'flex items-start gap-3',
+                    message.role === 'user' ? 'justify-end' : ''
+                    )}
+                >
+                    {message.role === 'assistant' && (
+                    <div className="bg-primary rounded-full p-2 text-primary-foreground">
+                        <BotMessageSquare className="h-5 w-5" />
+                    </div>
+                    )}
+                    <div
+                    className={cn(
+                        'rounded-lg px-4 py-3 text-sm max-w-[80%]',
+                        message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    )}
+                    >
+                    <p>{message.content}</p>
+                    </div>
+                </div>
+                ))}
+                {isLoading && (
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary rounded-full p-2 text-primary-foreground">
+                            <BotMessageSquare className="h-5 w-5" />
+                        </div>
+                        <div className="rounded-lg px-4 py-3 text-sm bg-muted flex items-center">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2"/>
+                            Thinking...
+                        </div>
+                    </div>
+                )}
+            </div>
+        </ScrollArea>
       </CardContent>
       <CardFooter>
-         <div className="relative w-full">
-            <Input
-              type="text"
-              placeholder="Ask AdvisorAI a question... (coming soon)"
-              className="pr-12"
-              disabled
-            />
-            <Button
-              type="submit"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-              disabled
-            >
-              <Send className="h-4 w-4" />
-              <span className="sr-only">Send</span>
-            </Button>
-          </div>
+        <div className="relative w-full">
+          <Input
+            type="text"
+            placeholder="Ask AdvisorAI a question..."
+            className="pr-12"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
+            disabled={isLoading}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+            onClick={handleSendMessage}
+            disabled={isLoading || !input.trim()}
+          >
+            <Send className="h-4 w-4" />
+            <span className="sr-only">Send</span>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

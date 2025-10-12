@@ -4,6 +4,7 @@ import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
+import { useRouter } from 'next/navigation';
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useAuth } from "@/firebase"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -69,6 +71,8 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const auth = useAuth();
+    const router = useRouter();
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -129,6 +133,11 @@ const SidebarProvider = React.forwardRef<
       [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
 
+    const handleLogout = async () => {
+        await auth.signOut();
+        router.push('/');
+    }
+
     return (
       <SidebarContext.Provider value={contextValue}>
         <TooltipProvider delayDuration={0}>
@@ -147,7 +156,12 @@ const SidebarProvider = React.forwardRef<
             ref={ref}
             {...props}
           >
-            {children}
+            {React.Children.map(children, child => {
+                if(React.isValidElement(child) && child.type === Sidebar) {
+                    return React.cloneElement(child, { handleLogout } as any);
+                }
+                return child;
+            })}
           </div>
         </TooltipProvider>
       </SidebarContext.Provider>
@@ -162,6 +176,7 @@ const Sidebar = React.forwardRef<
     side?: "left" | "right"
     variant?: "sidebar" | "floating" | "inset"
     collapsible?: "offcanvas" | "icon" | "none"
+    handleLogout?: () => void
   }
 >(
   (
@@ -171,6 +186,7 @@ const Sidebar = React.forwardRef<
       collapsible = "offcanvas",
       className,
       children,
+      handleLogout,
       ...props
     },
     ref
@@ -250,7 +266,12 @@ const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
           >
-            {children}
+            {React.Children.map(children, child => {
+                if(React.isValidElement(child) && child.type === SidebarContent) {
+                    return React.cloneElement(child, { handleLogout } as any);
+                }
+                return child;
+            })}
           </div>
         </div>
       </div>
@@ -397,8 +418,8 @@ SidebarSeparator.displayName = "SidebarSeparator"
 
 const SidebarContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div">
->(({ className, ...props }, ref) => {
+  React.ComponentProps<"div"> & { handleLogout?: () => void }
+>(({ className, children, handleLogout, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -408,7 +429,14 @@ const SidebarContent = React.forwardRef<
         className
       )}
       {...props}
-    />
+    >
+       {React.Children.map(children, child => {
+            if(React.isValidElement(child) && child.type === SidebarNav) {
+                return React.cloneElement(child, { handleLogout } as any);
+            }
+            return child;
+        })}
+    </div>
   )
 })
 SidebarContent.displayName = "SidebarContent"

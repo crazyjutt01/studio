@@ -17,13 +17,14 @@ const AdvisorAIWeeklySummaryInputSchema = z.object({
     .describe(
       'A JSON string containing the user weekly spending data, with spending categories and amounts.'
     ),
+    question: z.string().optional().describe('A specific question from the user about their finances.'),
 });
 export type AdvisorAIWeeklySummaryInput = z.infer<
   typeof AdvisorAIWeeklySummaryInputSchema
 >;
 
 const AdvisorAIWeeklySummaryOutputSchema = z.object({
-  summary: z.string().describe('A summary of the user weekly spending.'),
+  summary: z.string().describe('A summary of the user weekly spending or an answer to their question.'),
 });
 export type AdvisorAIWeeklySummaryOutput = z.infer<
   typeof AdvisorAIWeeklySummaryOutputSchema
@@ -39,11 +40,17 @@ const prompt = ai.definePrompt({
   name: 'advisorAIWeeklySummaryPrompt',
   input: {schema: AdvisorAIWeeklySummaryInputSchema},
   output: {schema: AdvisorAIWeeklySummaryOutputSchema},
-  prompt: `You are a personal finance advisor. Generate a concise summary of the user's weekly spending based on the data provided. Focus on key spending areas and any notable trends.
+  prompt: `You are a personal finance advisor. Your name is AdvisorAI.
+  
+  You have access to the user's weekly spending data.
+  
+  If the user asks a specific question, answer it based on the data provided.
+  If the user does not ask a question, generate a concise summary of their weekly spending. Focus on key spending areas and any notable trends. Be friendly and encouraging.
 
-Weekly Spending Data: {{{weeklySpendingData}}}
+  Weekly Spending Data: {{{weeklySpendingData}}}
+  User Question: {{{question}}}
 
-Summary:
+  Response:
 `,
 });
 

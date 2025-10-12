@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -12,22 +12,42 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getPersonalizedTips } from '@/ai/flows/budget-bot-personalized-tips';
 import { Loader2, Lightbulb } from 'lucide-react';
-import { user, getExpensesForAI } from '@/lib/data';
+import { useUser, useFirestore, useCollection } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import type { Transaction } from '@/lib/data';
+import { user as mockUser, getExpensesForAI } from '@/lib/data';
 
 export function BudgetBotCard() {
   const [isLoading, setIsLoading] = useState(false);
   const [tips, setTips] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const transactionsQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(firestore, `users/${user.uid}/transactions`));
+  }, [user, firestore]);
+
+  const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
 
   const handleGetTips = async () => {
+    if (!transactionsData) {
+        toast({
+            variant: 'destructive',
+            title: 'No transaction data available',
+            description: 'Cannot generate tips without spending history.',
+        });
+        return;
+    }
     setIsLoading(true);
     setTips([]);
     try {
-      const expenses = getExpensesForAI();
+      const expenses = getExpensesForAI(transactionsData);
       const result = await getPersonalizedTips({
-        income: user.monthlyIncome,
+        income: mockUser.monthlyIncome,
         expenses: expenses,
-        savingGoals: user.savingGoals,
+        savingGoals: mockUser.savingGoals,
       });
       setTips(result.tips);
     } catch (err) {
@@ -74,7 +94,7 @@ export function BudgetBotCard() {
         )}
       </CardContent>
       <CardFooter>
-        <Button onClick={handleGetTips} disabled={isLoading} className="w-full">
+        <Button onClick={handleGetTips} disabled={isLoading || !transactionsData} className="w-full">
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

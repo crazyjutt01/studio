@@ -1,57 +1,50 @@
-import { Header } from '@/components/header';
-import { SidebarNav } from '@/components/sidebar-nav';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarInset,
-} from '@/components/ui/sidebar';
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { FinSafeLogo } from '@/components/icons';
-import { OverviewCard } from '@/components/dashboard/overview-card';
-import { RecentTransactionsCard } from '@/components/dashboard/recent-transactions-card';
-import { SavingsGoalsCard } from '@/components/dashboard/savings-goals-card';
-import { SpendSpyCard } from '@/components/dashboard/spend-spy-card';
-import { BudgetBotCard } from '@/components/dashboard/budget-bot-card';
-import { AdvisorAICard } from '@/components/dashboard/advisor-ai-card';
-import { getCategoryData, transactions } from '@/lib/data';
+import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { Loader2 } from 'lucide-react';
 
-export default function DashboardPage() {
-    const categoryData = getCategoryData().map(c => ({...c, icon: c.icon.displayName as string}));
-    const totalSpending = transactions.reduce((sum, t) => sum + t.amount, 0);
+export default function LoginPage() {
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  const handleLogin = () => {
+    initiateAnonymousSignIn(auth);
+  };
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen w-full">
-      <Sidebar
-        variant="sidebar"
-        collapsible="icon"
-        className="bg-card border-r"
-      >
-        <SidebarHeader className="flex items-center gap-2 p-4">
-          <FinSafeLogo className="w-8 h-8 text-primary" />
-          <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
-            FinSafe
-          </span>
-        </SidebarHeader>
-        <SidebarContent className="p-2">
-          <SidebarNav />
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset className="bg-secondary/50">
-        <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-            <div className="flex items-center">
-                <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
-            </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-                <OverviewCard categoryData={categoryData} totalSpending={totalSpending} />
-                <RecentTransactionsCard />
-                <SavingsGoalsCard />
-                <SpendSpyCard />
-                <BudgetBotCard />
-                <AdvisorAICard />
-            </div>
-        </main>
-      </SidebarInset>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+      <div className="flex flex-col items-center gap-6 text-center">
+        <FinSafeLogo className="h-24 w-24 text-primary" />
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
+            Welcome to FinSafe
+          </h1>
+          <p className="max-w-[600px] text-muted-foreground md:text-xl">
+            Your personal AI-powered finance assistant. Gain insights, track spending, and achieve your financial goals.
+          </p>
+        </div>
+        <Button onClick={handleLogin} size="lg" className="px-8 py-6 text-lg">
+          Get Started
+        </Button>
+      </div>
     </div>
   );
 }
