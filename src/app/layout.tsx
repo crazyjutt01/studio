@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
+import { FloatingChatButton } from '@/components/floating-chat-button';
 
 export const metadata: Metadata = {
   title: 'FinSafe',
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
             {children}
+            <FloatingChatButton />
         </FirebaseClientProvider>
         <Toaster />
       </body>

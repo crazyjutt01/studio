@@ -24,7 +24,7 @@ type Message = {
   content: string;
 };
 
-export function AdvisorAICard({ isPage }: { isPage?: boolean }) {
+export function AdvisorAICard({ isPage, isChat }: { isPage?: boolean, isChat?: boolean }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -64,7 +64,7 @@ export function AdvisorAICard({ isPage }: { isPage?: boolean }) {
   };
 
   return (
-    <Card className={cn("flex flex-col", isPage ? "h-[75vh]" : "")}>
+    <Card className={cn("flex flex-col", isPage ? "h-[75vh]" : "", isChat ? "h-[60vh] border-0 shadow-none" : "")}>
       <CardHeader>
         <div className="flex items-center gap-2">
           <BotMessageSquare className="h-6 w-6 text-primary" />
@@ -75,6 +75,11 @@ export function AdvisorAICard({ isPage }: { isPage?: boolean }) {
       <CardContent className="flex-grow flex flex-col gap-4">
         <ScrollArea className="flex-grow pr-4 -mr-4">
             <div className="space-y-4">
+                {messages.length === 0 && !isLoading && (
+                    <div className="text-center text-muted-foreground pt-8">
+                        <p>Ask me anything about your finances!</p>
+                    </div>
+                )}
                 {messages.map((message, index) => (
                 <div
                     key={index}

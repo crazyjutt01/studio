@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,10 +12,15 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, query } from 'firebase/firestore';
 import type { SavingsGoal } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { AddGoalForm } from '@/components/forms/add-goal-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export function SavingsGoalsCard() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const goalsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -24,42 +30,58 @@ export function SavingsGoalsCard() {
   const { data: savingsGoals, isLoading } = useCollection<SavingsGoal>(goalsQuery);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Savings Goals (GoalGuru)</CardTitle>
-        <CardDescription>
-          Track your progress towards your financial goals.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ul className="space-y-6">
-          {isLoading && Array.from({ length: 3 }).map((_, i) => (
-            <li key={i}>
-              <div className="flex justify-between mb-1">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-48 mt-1" />
-            </li>
-          ))}
-          {savingsGoals && savingsGoals.map((goal) => {
-            const progress = (goal.currentAmount / goal.targetAmount) * 100;
-            return (
-              <li key={goal.id}>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Savings Goals (GoalGuru)</CardTitle>
+            <CardDescription>
+              Track your progress towards your financial goals.
+            </CardDescription>
+          </div>
+          <DialogTrigger asChild>
+            <Button size="sm" className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              <span>Add Goal</span>
+            </Button>
+          </DialogTrigger>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-6">
+            {isLoading && Array.from({ length: 3 }).map((_, i) => (
+              <li key={i}>
                 <div className="flex justify-between mb-1">
-                  <span className="font-medium">{goal.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ${goal.currentAmount.toLocaleString()} / ${goal.targetAmount.toLocaleString()}
-                  </span>
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-32" />
                 </div>
-                <Progress value={progress} aria-label={`${goal.name} progress`} />
-                 <p className="text-xs text-muted-foreground mt-1">{goal.name}</p>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-48 mt-1" />
               </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+            ))}
+            {savingsGoals && savingsGoals.map((goal) => {
+              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              return (
+                <li key={goal.id}>
+                  <div className="flex justify-between mb-1">
+                    <span className="font-medium">{goal.name}</span>
+                    <span className="text-sm text-muted-foreground">
+                      ${goal.currentAmount.toLocaleString()} / ${goal.targetAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  <Progress value={progress} aria-label={`${goal.name} progress`} />
+                  <p className="text-xs text-muted-foreground mt-1">{goal.name}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add a New Savings Goal</DialogTitle>
+        </DialogHeader>
+        <AddGoalForm onSuccess={() => setIsDialogOpen(false)} />
+      </DialogContent>
+    </Dialog>
   );
 }
