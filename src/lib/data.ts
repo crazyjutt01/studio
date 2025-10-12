@@ -10,6 +10,15 @@ export type Transaction = {
   category: 'Food' | 'Travel' | 'Shopping' | 'Bills';
 };
 
+export type Budget = {
+    id: string;
+    userId: string;
+    name: string;
+    amount: number;
+    startDate: string;
+    endDate: string;
+};
+
 export type SavingsGoal = {
   id: string;
   userId: string;

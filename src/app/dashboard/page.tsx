@@ -11,6 +11,7 @@ import { useUser } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { CategoryData, Transaction } from '@/lib/data';
+import { BudgetsCard } from '@/components/dashboard/budgets-card';
 
 function getCategoryData(transactions: Transaction[] | null): CategoryData[] {
   const categoryMap: { [key: string]: number } = {
@@ -64,6 +65,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
           <OverviewCard categoryData={categoryData} totalSpending={totalSpending} />
           <RecentTransactionsCard transactions={transactionsData} />
+          <BudgetsCard />
           <SavingsGoalsCard />
           <SpendSpyCard />
           <BudgetBotCard />
