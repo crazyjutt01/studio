@@ -9,9 +9,8 @@ import { BudgetBotCard } from '@/components/dashboard/budget-bot-card';
 import { AdvisorAICard } from '@/components/dashboard/advisor-ai-card';
 import { useUser } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { CategoryData, Transaction } from '@/lib/data';
-import { useMemo } from 'react';
 
 function getCategoryData(transactions: Transaction[] | null): CategoryData[] {
   const categoryMap: { [key: string]: number } = {
@@ -45,8 +44,8 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const transactionsQuery = useMemo(() => {
-    if (!user) return null;
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
 
