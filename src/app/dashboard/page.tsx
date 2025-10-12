@@ -3,15 +3,10 @@
 import { Header } from '@/components/header';
 import { OverviewCard } from '@/components/dashboard/overview-card';
 import { RecentTransactionsCard } from '@/components/dashboard/recent-transactions-card';
-import { SavingsGoalsCard } from '@/components/dashboard/savings-goals-card';
-import { SpendSpyCard } from '@/components/dashboard/spend-spy-card';
-import { BudgetBotCard } from '@/components/dashboard/budget-bot-card';
-import { AdvisorAICard } from '@/components/dashboard/advisor-ai-card';
 import { useUser } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import type { CategoryData, Transaction, UserData } from '@/lib/data';
-import { BudgetsCard } from '@/components/dashboard/budgets-card';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 
 function getCategoryData(transactions: Transaction[] | null): CategoryData[] | null {
@@ -69,11 +64,6 @@ export default function DashboardPage() {
           <OverviewCard categoryData={categoryData} totalSpending={totalSpending} userData={userData} />
           <NetWorthCard />
           <RecentTransactionsCard transactions={transactionsData} />
-          <BudgetsCard />
-          <SavingsGoalsCard />
-          <SpendSpyCard />
-          <BudgetBotCard />
-          <AdvisorAICard />
         </div>
       </main>
     </>

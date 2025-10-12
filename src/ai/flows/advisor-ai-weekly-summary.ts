@@ -12,19 +12,28 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AdvisorAIWeeklySummaryInputSchema = z.object({
-  weeklySpendingData: z
+  transactions: z
     .string()
-    .describe(
-      'A JSON string containing the user weekly spending data, with spending categories and amounts.'
-    ),
-    question: z.string().optional().describe('A specific question from the user about their finances.'),
+    .describe('A JSON string of the user\'s recent transactions.'),
+  budgets: z.string().describe('A JSON string of the user\'s budgets.'),
+  savingGoals: z
+    .string()
+    .describe('A JSON string of the user\'s saving goals.'),
+  question: z
+    .string()
+    .optional()
+    .describe('A specific question from the user about their finances.'),
 });
 export type AdvisorAIWeeklySummaryInput = z.infer<
   typeof AdvisorAIWeeklySummaryInputSchema
 >;
 
 const AdvisorAIWeeklySummaryOutputSchema = z.object({
-  summary: z.string().describe('A summary of the user weekly spending or an answer to their question.'),
+  summary: z
+    .string()
+    .describe(
+      'A summary of the user weekly spending or an answer to their question.'
+    ),
 });
 export type AdvisorAIWeeklySummaryOutput = z.infer<
   typeof AdvisorAIWeeklySummaryOutputSchema
@@ -42,12 +51,14 @@ const prompt = ai.definePrompt({
   output: {schema: AdvisorAIWeeklySummaryOutputSchema},
   prompt: `You are a personal finance advisor. Your name is AdvisorAI.
   
-  You have access to the user's weekly spending data.
+  You have access to the user's financial data.
+  - Transactions: {{{transactions}}}
+  - Budgets: {{{budgets}}}
+  - Saving Goals: {{{savingGoals}}}
   
-  If the user asks a specific question, answer it based on the data provided.
-  If the user does not ask a question, generate a concise summary of their weekly spending. Focus on key spending areas and any notable trends. Be friendly and encouraging.
+  If the user asks a specific question, answer it based on the data provided. Be thorough and provide actionable advice.
+  If the user does not ask a question, generate a concise summary of their financial situation. Focus on key spending areas, budget adherence, and progress towards saving goals. Be friendly and encouraging.
 
-  Weekly Spending Data: {{{weeklySpendingData}}}
   User Question: {{{question}}}
 
   Response:
