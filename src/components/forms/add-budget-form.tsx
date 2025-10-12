@@ -46,7 +46,7 @@ export function AddBudgetForm({ onSuccess }: AddBudgetFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
-      amount: undefined,
+      amount: '' as any,
       startDate: new Date(),
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
     },
