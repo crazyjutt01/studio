@@ -7,18 +7,16 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { SavingsGoal } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
-import { useMemo } from 'react';
-
 
 export function SavingsGoalsCard() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const goalsQuery = useMemo(() => {
+  const goalsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, `users/${user.uid}/savingGoals`));
   }, [user, firestore]);
