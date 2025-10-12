@@ -25,9 +25,11 @@ export type SavingsGoal = {
   name: string;
   targetAmount: number;
   currentAmount: number;
+  deadline?: string;
 };
 
-export type User = {
+export type UserData = {
+  id?: string;
   name: string;
   email: string;
   avatarUrl: string;
@@ -40,7 +42,7 @@ export type CategoryData = {
   total: number;
 };
 
-export const user: User = {
+export const user: UserData = {
   name: 'Alex Doe',
   email: 'alex.doe@example.com',
   avatarUrl: 'user-avatar-1',

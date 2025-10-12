@@ -8,12 +8,15 @@ import { SpendSpyCard } from '@/components/dashboard/spend-spy-card';
 import { BudgetBotCard } from '@/components/dashboard/budget-bot-card';
 import { AdvisorAICard } from '@/components/dashboard/advisor-ai-card';
 import { useUser } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import type { CategoryData, Transaction } from '@/lib/data';
+import { collection, query, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import type { CategoryData, Transaction, UserData } from '@/lib/data';
 import { BudgetsCard } from '@/components/dashboard/budgets-card';
+import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 
-function getCategoryData(transactions: Transaction[] | null): CategoryData[] {
+function getCategoryData(transactions: Transaction[] | null): CategoryData[] | null {
+  if (!transactions) return null;
+
   const categoryMap: { [key: string]: number } = {
     Food: 0,
     Travel: 0,
@@ -21,15 +24,9 @@ function getCategoryData(transactions: Transaction[] | null): CategoryData[] {
     Bills: 0,
   };
 
-  if (!transactions) {
-    return Object.entries(categoryMap).map(([name, total]) => ({
-      name,
-      total,
-    }));
-  }
-
   transactions.forEach(transaction => {
-    if (categoryMap[transaction.category] !== undefined) {
+    // Ensure category exists before adding to it
+    if (Object.prototype.hasOwnProperty.call(categoryMap, transaction.category)) {
       categoryMap[transaction.category] += transaction.amount;
     }
   });
@@ -45,15 +42,21 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
   const transactionsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
 
+  const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
 
   const categoryData = getCategoryData(transactionsData);
-  const totalSpending = transactionsData ? transactionsData.reduce((sum, t) => sum + t.amount, 0) : 0;
+  const totalSpending = transactionsData ? transactionsData.reduce((sum, t) => sum + t.amount, 0) : null;
 
   return (
     <>
@@ -63,7 +66,8 @@ export default function DashboardPage() {
           <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-          <OverviewCard categoryData={categoryData} totalSpending={totalSpending} />
+          <OverviewCard categoryData={categoryData} totalSpending={totalSpending} userData={userData} />
+          <NetWorthCard />
           <RecentTransactionsCard transactions={transactionsData} />
           <BudgetsCard />
           <SavingsGoalsCard />

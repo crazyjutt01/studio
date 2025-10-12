@@ -16,13 +16,18 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarIcon } from 'lucide-react';
 import type { SavingsGoal } from '@/lib/data';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from '../ui/calendar';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Goal name must be at least 2 characters.' }),
   targetAmount: z.coerce.number().positive({ message: 'Target amount must be positive.' }),
-  currentAmount: z.coerce.number().min(0, { message: 'Current amount cannot be negative.' }),
+  currentAmount: z.coerce.number().min(0, { message: 'Current amount cannot be negative.' }).default(0),
+  deadline: z.date().optional(),
 });
 
 type AddGoalFormValues = z.infer<typeof formSchema>;
@@ -42,6 +47,7 @@ export function AddGoalForm({ onSuccess }: AddGoalFormProps) {
       name: '',
       targetAmount: undefined,
       currentAmount: 0,
+      deadline: undefined,
     },
   });
 
@@ -61,6 +67,7 @@ export function AddGoalForm({ onSuccess }: AddGoalFormProps) {
       const goalsCol = collection(firestore, `users/${user.uid}/savingGoals`);
       const goalData: Omit<SavingsGoal, 'id'> = {
         ...values,
+        deadline: values.deadline?.toISOString(),
         userId: user.uid,
       };
       await addDocumentNonBlocking(goalsCol, goalData);
@@ -83,7 +90,7 @@ export function AddGoalForm({ onSuccess }: AddGoalFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="name"
@@ -118,13 +125,52 @@ export function AddGoalForm({ onSuccess }: AddGoalFormProps) {
                 <FormItem>
                 <FormLabel>Current Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="100" {...field} />
+                    <Input type="number" placeholder="0" {...field} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
             )}
             />
         </div>
+         <FormField
+            control={form.control}
+            name="deadline"
+            render={({ field }) => (
+                <FormItem className="flex flex-col">
+                <FormLabel>Target Date (Optional)</FormLabel>
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <FormControl>
+                        <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                        )}
+                        >
+                        {field.value ? (
+                            format(field.value, "PPP")
+                        ) : (
+                            <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                    />
+                    </PopoverContent>
+                </Popover>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
         <Button type="submit" disabled={isSubmitting} className="w-full">
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Add Goal

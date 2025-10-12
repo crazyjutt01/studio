@@ -13,9 +13,10 @@ import { collection, query } from 'firebase/firestore';
 import type { SavingsGoal } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Target } from 'lucide-react';
 import { AddGoalForm } from '@/components/forms/add-goal-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export function SavingsGoalsCard() {
   const { user } = useUser();
@@ -34,7 +35,10 @@ export function SavingsGoalsCard() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Savings Goals (GoalGuru)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Savings Goals (GoalGuru)
+            </CardTitle>
             <CardDescription>
               Track your progress towards your financial goals.
             </CardDescription>
@@ -48,31 +52,41 @@ export function SavingsGoalsCard() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-6">
-            {isLoading && Array.from({ length: 3 }).map((_, i) => (
+            {isLoading && Array.from({ length: 2 }).map((_, i) => (
               <li key={i}>
-                <div className="flex justify-between mb-1">
+                <div className="flex justify-between mb-2">
                   <Skeleton className="h-5 w-24" />
                   <Skeleton className="h-5 w-32" />
                 </div>
                 <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-48 mt-1" />
+                <Skeleton className="h-4 w-48 mt-2" />
               </li>
             ))}
             {savingsGoals && savingsGoals.map((goal) => {
               const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              const timeLeft = goal.deadline ? formatDistanceToNow(parseISO(goal.deadline), { addSuffix: true }) : 'No deadline';
+
               return (
                 <li key={goal.id}>
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">{goal.name}</span>
-                    <span className="text-sm text-muted-foreground">
+                  <div className="flex justify-between mb-1 font-medium">
+                    <span>{goal.name}</span>
+                    <span className="text-sm">
                       ${goal.currentAmount.toLocaleString()} / ${goal.targetAmount.toLocaleString()}
                     </span>
                   </div>
                   <Progress value={progress} aria-label={`${goal.name} progress`} />
-                  <p className="text-xs text-muted-foreground mt-1">{goal.name}</p>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{Math.round(progress)}% complete</span>
+                    <span>{timeLeft}</span>
+                  </div>
                 </li>
               );
             })}
+             {savingsGoals?.length === 0 && !isLoading && (
+                <div className="text-center text-muted-foreground pt-8">
+                    <p>No savings goals set yet. Let's add one!</p>
+                </div>
+             )}
           </ul>
         </CardContent>
       </Card>
