@@ -59,15 +59,17 @@ export function seedDatabase(db: Firestore, userId: string) {
 
   // Commit the batch
   batch.commit().catch(error => {
-    console.error("Error seeding database:", error);
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
+    const permissionError = new FirestorePermissionError({
         path: `users/${userId}`,
         operation: 'write',
-        requestResourceData: { userData, defaultTransactions, defaultSavingsGoals },
-      })
-    );
+        requestResourceData: {
+          message: 'This write operation is a batch write to seed the database for a new user.',
+          userData,
+          defaultTransactions,
+          defaultSavingsGoals,
+        },
+      });
+      errorEmitter.emit('permission-error', permissionError);
   });
 }
 
