@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getPersonalizedTips } from '@/ai/flows/budget-bot-personalized-tips';
 import { Loader2, Lightbulb } from 'lucide-react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Transaction } from '@/lib/data';
 import { user as mockUser, getExpensesForAI } from '@/lib/data';
@@ -24,7 +24,7 @@ export function BudgetBotCard() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const transactionsQuery = useMemo(() => {
+  const transactionsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
@@ -81,7 +81,7 @@ export function BudgetBotCard() {
           <ul className="space-y-3">
             {tips.map((tip, index) => (
               <li key={index} className="flex items-start text-sm">
-                <Lightbulb className="h-4 w-4 mr-3 mt-1 text-accent-foreground flex-shrink-0" style={{ color: 'hsl(var(--accent))' }}/>
+                <Lightbulb className="h-4 w-4 mr-3 mt-1 text-accent-foreground" style={{ color: 'hsl(var(--accent))' }}/>
                 <span className="text-muted-foreground">{tip}</span>
               </li>
             ))}
