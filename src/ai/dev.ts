@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/spend-spy-expense-recording.ts';
-import '@/ai/flows/advisor-ai-weekly-summary.ts';
-import '@/ai/flows/budget-bot-personalized-tips.ts';
+import './flows/spend-spy-expense-recording.ts';
+import './flows/advisor-ai-weekly-summary.ts';
+import './flows/budget-bot-personalized-tips.ts';
