@@ -1,0 +1,163 @@
+/**
+ * @file Firestore Security Rules for FinSafe Application
+ * @version 2
+ *
+ * @Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Each user has complete control over their own data,
+ * including budgets, transactions, categories, saving goals, and alerts. No cross-user data access is permitted.
+ *
+ * @Data Structure:
+ * All data is nested under /users/{userId}, with subcollections for budgets, transactions, categories, saving goals, and alerts.
+ * This structure ensures data isolation and simplifies access control.
+ *
+ * @Key Security Decisions:
+ * - Users can only access data associated with their own user ID.
+ * - All write operations (create, update, delete) require authentication and ownership validation.
+ * - List operations are restricted to the owner of the data.
+ * - Data validation is limited to ensuring relational integrity (userId consistency) and preventing modification of critical fields.
+ * - The rules are designed to be Authorization Independent, avoiding costly `get()` calls by denormalizing authorization data.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Secures the /users/{userId} document, ensuring only the authenticated user can manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) - User with ID 'user123' creates their profile with matching ID.
+     *   request.auth.uid == 'user123' && request.resource.data.id == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' reads, updates, or deletes their profile.
+     *   request.auth.uid == 'user123' && resource.data.id == 'user123'
+     * @deny (create) - User with ID 'user456' tries to create a profile with ID 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.id == 'user123'
+     * @deny (update, delete) - User with ID 'user456' tries to update or delete the profile of user 'user123'.
+     *   request.auth.uid == 'user456' && resource.data.id == 'user123'
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures the /users/{userId}/budgets/{budgetId} collection, ensuring only the authenticated user can manage their own budgets.
+     * @path /users/{userId}/budgets/{budgetId}
+     * @allow (create) - User with ID 'user123' creates a budget in their collection.
+     *   request.auth.uid == 'user123' && request.resource.data.userId == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' reads, updates, or deletes a budget in their collection.
+     *   request.auth.uid == 'user123' && resource.data.userId == 'user123'
+     * @deny (create) - User with ID 'user456' tries to create a budget for user 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' tries to update or delete a budget of user 'user123'.
+     *   request.auth.uid == 'user456' && resource.data.userId == 'user123'
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /users/{userId}/budgets/{budgetId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures the /users/{userId}/transactions/{transactionId} collection, ensuring only the authenticated user can manage their own transactions.
+     * @path /users/{userId}/transactions/{transactionId}
+     * @allow (create) - User with ID 'user123' creates a transaction in their collection.
+     *   request.auth.uid == 'user123' && request.resource.data.userId == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' reads, updates, or deletes a transaction in their collection.
+     *   request.auth.uid == 'user123' && resource.data.userId == 'user123'
+     * @deny (create) - User with ID 'user456' tries to create a transaction for user 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' tries to update or delete a transaction of user 'user123'.
+     *   request.auth.uid == 'user456' && resource.data.userId == 'user123'
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /users/{userId}/transactions/{transactionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures the /users/{userId}/categories/{categoryId} collection, ensuring only the authenticated user can manage their own categories.
+     * @path /users/{userId}/categories/{categoryId}
+     * @allow (create) - User with ID 'user123' creates a category in their collection.
+     *   request.auth.uid == 'user123' && request.resource.data.userId == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' reads, updates, or deletes a category in their collection.
+     *   request.auth.uid == 'user123' && resource.data.userId == 'user123'
+     * @deny (create) - User with ID 'user456' tries to create a category for user 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' tries to update or delete a category of user 'user123'.
+     *   request.auth.uid == 'user456' && resource.data.userId == 'user123'
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /users/{userId}/categories/{categoryId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures the /users/{userId}/savingGoals/{savingGoalId} collection, ensuring only the authenticated user can manage their own saving goals.
+     * @path /users/{userId}/savingGoals/{savingGoalId}
+     * @allow (create) - User with ID 'user123' creates a saving goal in their collection.
+     *   request.auth.uid == 'user123' && request.resource.data.userId == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' reads, updates, or deletes a saving goal in their collection.
+     *   request.auth.uid == 'user123' && resource.data.userId == 'user123'
+     * @deny (create) - User with ID 'user456' tries to create a saving goal for user 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' tries to update or delete a saving goal of user 'user123'.
+     *   request.auth.uid == 'user456' && resource.data.userId == 'user123'
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /users/{userId}/savingGoals/{savingGoalId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures the /users/{userId}/alerts/{alertId} collection, ensuring only the authenticated user can manage their own alerts.
+     * @path /users/{userId}/alerts/{alertId}
+     * @allow (create) - User with ID 'user123' creates an alert in their collection.
+     *   request.auth.uid == 'user123' && request.resource.data.userId == 'user123'
+     * @allow (get, update, delete) - User with ID 'user123' reads, updates, or deletes an alert in their collection.
+     *   request.auth.uid == 'user123' && resource.data.userId == 'user123'
+     * @deny (create) - User with ID 'user456' tries to create an alert for user 'user123'.
+     *   request.auth.uid == 'user456' && request.resource.data.userId == 'user123'
+     * @deny (update, delete) - User with ID 'user456' tries to update or delete an alert of user 'user123'.
+     *   request.auth.uid == 'user456' && resource.data.userId == 'user123'
+     * @principle Enforces document ownership and validates relational integrity.
+     */
+    match /users/{userId}/alerts/{alertId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+  }
+}
