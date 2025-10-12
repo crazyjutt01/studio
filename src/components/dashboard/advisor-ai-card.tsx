@@ -11,14 +11,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BotMessageSquare, Loader2, Send } from 'lucide-react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { getWeeklySpendingForAI } from '@/lib/data';
 import type { Transaction } from '@/lib/data';
 import { advisorAIWeeklySummary } from '@/ai/flows/advisor-ai-weekly-summary';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -32,7 +31,7 @@ export function AdvisorAICard({ isPage }: { isPage?: boolean }) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const transactionsQuery = useMemo(() => {
+  const transactionsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
