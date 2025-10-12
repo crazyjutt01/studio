@@ -6,9 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AddTransactionForm } from '@/components/forms/add-transaction-form';
 import { PlusCircle } from 'lucide-react';
+import { RecentTransactionsCard } from '@/components/dashboard/recent-transactions-card';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import type { Transaction } from '@/lib/data';
 
 export default function SpendSpyPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, `users/${user.uid}/transactions`));
+  }, [user, firestore]);
+
+  const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
+
   return (
     <>
       <Header />
@@ -30,10 +44,9 @@ export default function SpendSpyPage() {
             </DialogContent>
           </Dialog>
         </div>
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <SpendSpyCard />
-          </div>
+            <RecentTransactionsCard transactions={transactionsData} />
         </div>
       </main>
     </>
