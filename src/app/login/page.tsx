@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FinSafeLogo } from '@/components/icons';
-import { useAuth, useUser, initiateEmailSignIn, initiateGoogleSignIn, useFirestore } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn, initiateGoogleSignIn, useFirestore, seedDatabase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -61,7 +61,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
         await initiateEmailSignIn(auth, values.email, values.password);
-        // The onAuthStateChanged listener will handle the redirect
+        router.push('/dashboard');
     } catch (error: any) {
         let description = 'An unexpected error occurred. Please try again.';
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -97,7 +97,9 @@ export default function LoginPage() {
         });
         await seedDatabase(firestore, userCredential.user.uid);
       }
+      router.push('/dashboard');
     } catch (error: any) {
+      console.error(error);
       toast({
           variant: 'destructive',
           title: 'Google Sign-In Failed',

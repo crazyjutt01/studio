@@ -77,6 +77,7 @@ export default function SignUpPage() {
        });
 
        await seedDatabase(firestore, userCredential.user.uid);
+       router.push('/dashboard');
        
      } catch (error: any) {
         let description = 'An unexpected error occurred. Please try again.';
@@ -113,7 +114,9 @@ export default function SignUpPage() {
         });
         await seedDatabase(firestore, userCredential.user.uid);
       }
+      router.push('/dashboard');
     } catch (error: any) {
+      console.error(error);
       toast({
           variant: 'destructive',
           title: 'Google Sign-In Failed',
