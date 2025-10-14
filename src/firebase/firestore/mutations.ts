@@ -40,39 +40,31 @@ const defaultAlerts: Omit<Alert, 'id' | 'userId'>[] = [
 
 export async function seedDatabase(db: Firestore, userId: string) {
     try {
-        // Seed user profile
-        const userRef = doc(db, 'users', userId);
-        const userData: UserData = {
-            name: 'Demo User',
-            email: null,
-            avatarUrl: 'user-avatar-1',
-            monthlyIncome: 5000,
-            savingGoals: 'Save for a new car and a vacation to Japan.',
-        };
-        await setDoc(userRef, userData, { merge: true });
+        // NOTE: The user document is now created on sign-up. 
+        // This function seeds the sub-collections.
 
         // Seed transactions
         const transactionsCol = collection(db, `users/${userId}/transactions`);
         for (const transaction of defaultTransactions) {
-            await addDocumentNonBlocking(transactionsCol, { ...transaction, userId });
+            await addDoc(transactionsCol, { ...transaction, userId });
         }
 
         // Seed savings goals
         const savingsCol = collection(db, `users/${userId}/savingGoals`);
         for (const goal of defaultSavingsGoals) {
-            await addDocumentNonBlocking(savingsCol, { ...goal, userId });
+            await addDoc(savingsCol, { ...goal, userId });
         }
 
         // Seed budgets
         const budgetsCol = collection(db, `users/${userId}/budgets`);
         for (const budget of defaultBudgets) {
-            await addDocumentNonBlocking(budgetsCol, { ...budget, userId });
+            await addDoc(budgetsCol, { ...budget, userId });
         }
 
         // Seed alerts
         const alertsCol = collection(db, `users/${userId}/alerts`);
         for (const alert of defaultAlerts) {
-            await addDocumentNonBlocking(alertsCol, { ...alert, userId });
+            await addDoc(alertsCol, { ...alert, userId });
         }
 
     } catch (error) {
