@@ -28,6 +28,14 @@ export type SavingsGoal = {
   deadline?: string;
 };
 
+export type EmergencyContact = {
+  id: string;
+  userId: string;
+  name: string;
+  phone: string;
+  relationship: string;
+};
+
 export type UserData = {
   id?: string;
   name: string;
@@ -40,14 +48,6 @@ export type UserData = {
 export type CategoryData = {
   name: string;
   total: number;
-};
-
-export const user: UserData = {
-  name: 'Alex Doe',
-  email: 'alex.doe@example.com',
-  avatarUrl: 'user-avatar-1',
-  monthlyIncome: 5000,
-  savingGoals: 'Save for a new car and a vacation to Japan.',
 };
 
 export const getWeeklySpendingForAI = (transactions: Transaction[]) => {
@@ -97,3 +97,5 @@ export const categoryIcons: CategoryIcons = {
   Shopping: ShoppingCart,
   Bills: Landmark
 };
+
+    

@@ -220,6 +220,41 @@
         "timestamp",
         "isRead"
       ]
+    },
+    "EmergencyContact": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EmergencyContact",
+      "type": "object",
+      "description": "Represents a user's emergency contact.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the emergency contact."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N EmergencyContact)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the emergency contact."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the emergency contact."
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Relationship of the emergency contact to the user (e.g., 'Family', 'Friend')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "phone",
+        "relationship"
+      ]
     }
   },
   "auth": {
@@ -345,8 +380,29 @@
             }
           ]
         }
+      },
+      {
+        "path": "/users/{userId}/emergencyContacts/{contactId}",
+        "definition": {
+          "entityName": "EmergencyContact",
+          "schema": {
+            "$ref": "#/backend/entities/EmergencyContact"
+          },
+          "description": "Stores emergency contact information for a specific user. The 'userId' parameter identifies the user, and 'contactId' identifies the specific contact.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "contactId",
+              "description": "The unique identifier for the emergency contact."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to ensure data isolation and efficient querying by leveraging path-based ownership for user-specific data. Each user has their own dedicated collections for budgets, transactions, categories, saving goals, and alerts. This approach simplifies security rules and allows for direct querying of a user's resources.  The structure avoids hierarchical authorization dependencies by directly associating all user-related data under the respective user ID, enabling atomic operations and straightforward access control based on `request.auth.uid`. This eliminates the need for `get()` calls in security rules, promoting Authorization Independence. The AI-related data can be stored under the user as well, further simplifying the data structure.  This design supports secure list operations (QAPs) because each collection is scoped to a specific user, and rules can easily enforce that only the authenticated user can access their own data. In particular, each collection is segregated by `userId`.  Timestamps are included in `Transaction` and `Alert` to maintain chronological order, and the `userId` field is enforced to ensure ownership."
   }
 }
+    
