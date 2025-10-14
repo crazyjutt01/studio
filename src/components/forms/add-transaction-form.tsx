@@ -14,15 +14,16 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useUser, useFirestore, addDocumentNonBlocking, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Loader2, CalendarIcon } from 'lucide-react';
-import type { Transaction } from '@/lib/data';
+import type { Transaction, UserData, Budget, SavingsGoal } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '../ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { generateAlerts } from '@/ai/flows/alert-generator';
 
 const formSchema = z.object({
   description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
@@ -42,6 +43,31 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
+  const transactionsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/transactions`);
+  }, [user, firestore]);
+
+  const budgetsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/budgets`);
+  }, [user, firestore]);
+
+  const savingsGoalsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(firestore, `users/${user.uid}/savingGoals`);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc<UserData>(userDocRef);
+  const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
+  const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
+  const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
+
   const form = useForm<AddTransactionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -52,6 +78,27 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
   });
 
   const { isSubmitting } = form.formState;
+
+  const triggerAlertCheck = async (newTransaction: Omit<Transaction, 'id'>) => {
+    if (!user || !userData || !userData.smartReminders || !transactionsData || !budgetsData || !savingsGoalsData) {
+      return;
+    }
+
+    try {
+      // Add the new transaction to the existing data for an up-to-date analysis
+      const updatedTransactions = [...transactionsData, { ...newTransaction, id: 'temp' }];
+
+      await generateAlerts({
+        userId: user.uid,
+        transactions: JSON.stringify(updatedTransactions),
+        budgets: JSON.stringify(budgetsData),
+        goals: JSON.stringify(savingsGoalsData),
+        monthlyIncome: userData.monthlyIncome,
+      });
+    } catch (error) {
+      console.error("Failed to trigger smart reminder check:", error);
+    }
+  };
 
   async function onSubmit(values: AddTransactionFormValues) {
     if (!user || !firestore) {
@@ -76,6 +123,10 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
         title: 'Transaction Added!',
         description: `Transaction for ${values.description} has been successfully added.`,
       });
+      
+      // Trigger the AI check non-blockingly
+      triggerAlertCheck(transactionData);
+
       form.reset();
       onSuccess?.();
     } catch (error) {

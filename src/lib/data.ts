@@ -45,6 +45,7 @@ export type UserData = {
   monthlyIncome: number;
   savingGoals: string;
   assets: number;
+  smartReminders?: boolean;
 };
 
 export type Alert = {
@@ -54,6 +55,7 @@ export type Alert = {
   message: string;
   timestamp: string;
   isRead: boolean;
+  trigger?: string;
 };
 
 export type CategoryData = {

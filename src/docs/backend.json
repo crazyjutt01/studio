@@ -24,8 +24,12 @@
           "description": "User's last name."
         },
         "assets": {
-            "type": "number",
-            "description": "The total value of the user's assets."
+          "type": "number",
+          "description": "The total value of the user's assets."
+        },
+        "smartReminders": {
+          "type": "boolean",
+          "description": "Whether the user has enabled smart reminders."
         }
       },
       "required": [
@@ -212,8 +216,12 @@
           "description": "Indicates whether the alert has been read by the user."
         },
         "budgetName": {
-            "type": "string",
-            "description": "The name of the budget this alert is associated with."
+          "type": "string",
+          "description": "The name of the budget this alert is associated with."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "The reason the alert was triggered."
         }
       },
       "required": [
@@ -279,7 +287,7 @@
           "description": "A JSON string of the user's saving goals."
         },
         "friendlyMessage": {
-            "type": "string"
+          "type": "string"
         },
         "recoveryPlan": {
           "type": "array",
@@ -293,11 +301,20 @@
                 "type": "string"
               }
             },
-            "required": ["title", "details"]
+            "required": [
+              "title",
+              "details"
+            ]
           }
         }
       },
-      "required": ["transactions", "budgets", "savingGoals", "friendlyMessage", "recoveryPlan"]
+      "required": [
+        "transactions",
+        "budgets",
+        "savingGoals",
+        "friendlyMessage",
+        "recoveryPlan"
+      ]
     },
     "GoalAdvice": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -321,7 +338,12 @@
           }
         }
       },
-      "required": ["income", "expenses", "savingGoals", "tips"]
+      "required": [
+        "income",
+        "expenses",
+        "savingGoals",
+        "tips"
+      ]
     }
   },
   "auth": {
