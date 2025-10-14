@@ -7,7 +7,7 @@ FinSafe is a modern, responsive web application built with Next.js that leverage
 - **Framework**: [Next.js](https://nextjs.org/) (App Router)
 - **UI Components**: [ShadCN UI](https://ui.shadcn.com/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore & Anonymous Authentication)
+- **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore & Authentication)
 - **Generative AI**: [Genkit](https://firebase.google.com/docs/genkit) (Powered by Google's Gemini models)
 - **Charts**: [Recharts](https://recharts.org/)
 - **Forms**: [React Hook Form](https://react-hook-form.com/) & [Zod](https://zod.dev/)
@@ -16,64 +16,71 @@ FinSafe is a modern, responsive web application built with Next.js that leverage
 
 ## Core Features
 
-### 1. Authentication
+### 1. Secure Authentication (Login & Sign-Up)
 
-- **Simple & Secure Sign-In**: FinSafe uses Firebase's **Anonymous Authentication** to provide a seamless onboarding experience. The first time a user visits, an anonymous account is automatically created for them.
-- **Persistent Sessions**: User sessions are maintained across visits, so they can always return to their personal dashboard.
-- **Automatic Data Seeding**: Upon first sign-in, the database is automatically seeded with sample data (transactions, budgets, and goals) so users can immediately explore the app's features.
+-   **Why it's important**: Secure authentication is the foundation of a personalized financial app. It ensures that each user's sensitive financial data is kept private and accessible only to them. FinSafe offers both traditional email/password and convenient Google Sign-In options.
+-   **How to use it**:
+    -   **Sign-Up**: New users can visit the "Sign Up" page to create an account using their email and a password or by simply clicking the "Sign up with Google" button. This creates their secure user profile in the backend.
+    -   **Login**: Existing users can log in through the "Login" page using their credentials or Google account.
+-   **Onboarding**: Upon first sign-in, FinSafe creates a personal and secure space for the user in the database, ensuring all their future financial data is stored privately.
 
-### 2. Dashboard (`/dashboard`)
+### 2. The Dashboard (`/dashboard`)
 
-The central hub for your financial overview.
-
-- **Monthly Overview Card**: Get a quick snapshot of your finances for the current month, including:
-    - **Total Income**: Based on the income set in the user's profile.
-    - **Total Spending**: Sum of all transactions for the month.
-    - **Savings Rate**: The percentage of income saved.
-    - **Net Flow**: The difference between income and spending.
-    - **Spending Chart**: A bar chart visualizing spending across different categories (Food, Travel, etc.).
-- **Net Worth Card**: Tracks your overall financial position with a summary and an area chart showing the trend over time.
-- **Recent Transactions Card**: Displays a list of your most recent transactions. You can also quickly add a new transaction directly from this card.
+-   **Why it's important**: The dashboard provides a "financial command center" where users can get a high-level overview of their financial health at a glance. It consolidates the most critical information into one place, making it easy to spot trends and stay informed.
+-   **How it works**:
+    -   **Monthly Overview Card**: This card gives a snapshot of the current month's finances, including:
+        -   **Total Income**: Pulled from the user's profile settings.
+        -   **Total Spending**: A real-time sum of all transactions for the month.
+        -   **Savings Rate**: The percentage of income saved, a key indicator of financial health.
+        -   **Net Flow**: The difference between income and spending, showing if the user is saving or overspending.
+        -   **Spending Chart**: A clear bar chart that visualizes spending across different categories (Food, Travel, etc.).
+    -   **Net Worth Card**: This card tracks the user's overall financial position. It calculates net worth by combining the user's "Current Assets" (from their profile) with the total amount saved in their goals. An area chart shows the net worth trend over time.
+    -   **Recent Transactions Card**: This card lists the most recent transactions, providing a quick way to review spending. Users can also click the "Add Transaction" button to manually log a new expense directly from the dashboard.
 
 ### 3. SpendSpy (`/spend-spy`)
 
-Automate expense tracking with the power of AI.
-
-- **Receipt Upload**: Drag and drop or browse to upload an image of a receipt.
-- **AI-Powered Extraction**: Uses a Genkit flow (`recordExpense`) that sends the receipt image to a Gemini model. The model analyzes the image and extracts key details:
-    - Merchant Name
-    - Transaction Date
-    - Total Amount
-    - Expense Category
-- **Automatic Record Creation**: Once the details are extracted, a new transaction is automatically created and saved to your Firestore database.
+-   **Why it's important**: Expense tracking is often tedious. SpendSpy automates this process using AI, making it effortless to maintain accurate financial records. By simply taking a picture of a receipt, users can ensure their spending is accurately captured.
+-   **How to use it**:
+    1.  Navigate to the **SpendSpy** page.
+    2.  Drag and drop an image of a receipt onto the upload area, or click to browse for the file.
+    3.  The `recordExpense` Genkit flow sends the image to an AI model, which extracts the merchant name, date, total amount, and category.
+    4.  The extracted details are used to automatically create a new transaction record, which is saved to Firestore and immediately reflected in the "Recent Transactions" list.
 
 ### 4. BudgetBot (`/budget-bot`)
 
-Tools and AI-driven advice for smart budgeting.
-
-- **Budgets Card**: Create, view, and track your budgets. A progress bar for each budget shows how much you've spent against your limit.
-- **BudgetBot AI Tips**: By clicking "Get My Tips", you trigger a Genkit flow (`getPersonalizedTips`). This flow analyzes your income, spending habits, and savings goals to generate a list of personalized, actionable financial tips.
+-   **Why it's important**: Budgeting is key to financial control. BudgetBot goes beyond simple tracking by providing AI-driven advice. It helps users create realistic budgets that align with their income, spending habits, and long-term goals.
+-   **How it works**:
+    -   **Budgets Card**: Users can create and monitor their budgets. For each budget, a progress bar shows how much has been spent against the limit.
+    -   **BudgetBot AI**: By clicking **"Generate My Budget"**, the user triggers the `getPersonalizedBudget` Genkit flow. This AI analyzes the user's income, assets, recent transactions, and savings goals to generate a recommended monthly budget broken down by category. This provides a concrete, personalized spending plan to help the user stay on track.
 
 ### 5. GoalGuru (`/goal-guru`)
 
-Stay on track with your long-term financial objectives.
-
-- **Savings Goals Card**: Add and monitor your savings goals (e.g., "Vacation Fund", "New Car").
-- **Progress Tracking**: For each goal, you can see:
-    - The target amount.
-    - The current amount saved.
-    - A progress bar visualizing how close you are to achieving the goal.
-    - The time remaining until your deadline.
+-   **Why it's important**: Financial goals can feel distant and hard to reach. GoalGuru makes goals tangible by visualizing progress and providing AI-powered motivation and advice, helping users stay focused on their long-term objectives.
+-   **How it works**:
+    -   **Savings Goals Card**: Users can add, view, and track their savings goals (e.g., "Vacation Fund," "New Car"). Each goal displays the target amount, current amount saved, and a progress bar.
+    -   **GoalGuru AI**: By clicking **"Get Goal-Hacking Tips"**, the user triggers the `getGoalAdvice` Genkit flow. The AI analyzes the user's financial data and generates a list of personalized, actionable tips designed to help them cut costs and accelerate their savings.
 
 ### 6. AdvisorAI (Floating Chat & `/advisor-ai`)
 
-Your on-demand AI financial advisor, accessible from anywhere in the app.
-
-- **Conversational Interface**: Ask questions about your finances in plain English.
-- **Context-Aware Responses**: AdvisorAI uses a Genkit flow (`advisorAIWeeklySummary`) that has access to your live financial data (transactions, budgets, savings goals) from Firestore.
-- **Personalized Insights**: Ask questions like "How much did I spend on food last week?" or "Am I on track to meet my savings goals?" to get instant, data-driven answers and advice.
-- **Floating Chat**: The chat interface can be opened from a floating button on any page, providing immediate access to AI assistance.
+-   **Why it's important**: Financial questions can arise at any time. AdvisorAI acts as an on-demand financial expert, accessible from anywhere in the app. It provides instant, context-aware answers based on the user's live financial data.
+-   **How to use it**:
+    -   Click the floating chat button in the bottom-right corner of any page or navigate to the dedicated **AdvisorAI** page.
+    -   Ask questions in plain English, such as "How much did I spend on food last week?" or "Am I on track to meet my savings goals?"
+    -   The `advisorAIWeeklySummary` Genkit flow accesses the user's live transactions, budgets, and goals from Firestore to provide an instant, data-driven answer.
 
 ### 7. Crisis Guardian (`/crisis-guardian`)
 
-A placeholder for future features designed to provide support during financial hardship. This feature is currently under development.
+-   **Why it's important**: Financial emergencies can be stressful. Crisis Guardian acts as an AI-powered safety net, helping users identify signs of financial distress and providing a calm, actionable plan to get back on track.
+-   **How it works**:
+    -   On the **Crisis Guardian** page, the user can click **"Analyze for Financial Stress"**.
+    -   The `getCrisisSupport` Genkit flow analyzes recent transactions for anomalies (like a sudden large expense or consistent overspending).
+    -   If a stress event is detected, the AI responds with an empathetic message and a step-by-step recovery plan, which might include suggestions like temporarily pausing a savings goal or adjusting a budget.
+    -   Users can also add **Emergency Contacts** on this page for easy access in times of need.
+
+### 8. User Profile & Settings (`/settings`)
+
+-   **Why it's important**: Personalization is key. The settings page gives users control over the data that powers the app's insights, such as their income and assets.
+-   **How to use it**:
+    -   Navigate to the **Settings** page via the user menu in the header.
+    -   Here, users can view and update their first name, last name, monthly income, and total assets.
+    -   Changes are saved directly to their user document in Firestore, ensuring all AI-driven advice and calculations across the app are always based on the most up-to-date information.
