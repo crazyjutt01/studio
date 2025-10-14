@@ -262,11 +262,22 @@
       "type": "object",
       "description": "Represents AI-generated support for a user in crisis.",
       "properties": {
-        "crisisDescription": {
+        "transactions": {
           "type": "string",
-          "description": "The user's description of their financial crisis."
+          "description": "A JSON string of the user's recent transactions."
         },
-        "supportSteps": {
+        "budgets": {
+          "type": "string",
+          "description": "A JSON string of the user's budgets."
+        },
+        "savingGoals": {
+          "type": "string",
+          "description": "A JSON string of the user's saving goals."
+        },
+        "friendlyMessage": {
+            "type": "string"
+        },
+        "recoveryPlan": {
           "type": "array",
           "items": {
             "type": "object",
@@ -282,7 +293,7 @@
           }
         }
       },
-      "required": ["crisisDescription", "supportSteps"]
+      "required": ["transactions", "budgets", "savingGoals", "friendlyMessage", "recoveryPlan"]
     }
   },
   "auth": {
