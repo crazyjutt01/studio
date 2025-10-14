@@ -9,18 +9,26 @@ import {
 import { Skeleton } from '../ui/skeleton';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import type { SavingsGoal } from '@/lib/data';
+import type { SavingsGoal, UserData } from '@/lib/data';
 import { Scale } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { subMonths, format } from 'date-fns';
 
-const data = [
-    { month: 'Jan', netWorth: 21500 },
-    { month: 'Feb', netWorth: 22000 },
-    { month: 'Mar', netWorth: 23200 },
-    { month: 'Apr', netWorth: 22800 },
-    { month: 'May', netWorth: 24500 },
-    { month: 'Jun', netWorth: 25100 },
-];
+// Helper to generate chart data
+const generateChartData = (savingsGoals: SavingsGoal[] | null) => {
+    if (!savingsGoals) return [];
+    
+    const data = Array.from({ length: 6 }).map((_, i) => {
+        const date = subMonths(new Date(), 5 - i);
+        const month = format(date, 'MMM');
+        // This is a simplified simulation of net worth growth.
+        // A real app might pull historical data or calculate it more accurately.
+        const netWorth = savingsGoals.reduce((acc, goal) => acc + goal.currentAmount, 0) * (1 + (i - 5) * 0.05);
+        return { month, netWorth: Math.max(0, netWorth) };
+    });
+
+    return data;
+};
 
 
 export function NetWorthCard() {
@@ -35,6 +43,10 @@ export function NetWorthCard() {
     const { data: savingsGoals, isLoading } = useCollection<SavingsGoal>(goalsQuery);
 
     const totalSavings = savingsGoals?.reduce((acc, goal) => acc + goal.currentAmount, 0) ?? 0;
+    const chartData = generateChartData(savingsGoals);
+    const lastMonthWorth = chartData[chartData.length - 2]?.netWorth ?? 0;
+    const currentWorth = chartData[chartData.length - 1]?.netWorth ?? 0;
+    const percentageChange = lastMonthWorth > 0 ? ((currentWorth - lastMonthWorth) / lastMonthWorth) * 100 : 0;
 
     // This is a simplified net worth calculation. A real app would be more complex.
     const netWorth = totalSavings + 15000; // Assuming 15k in other assets
@@ -62,11 +74,11 @@ export function NetWorthCard() {
         <>
             <div className="text-4xl font-bold tracking-tight">${netWorth.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mb-4">
-                An increase of 5.2% from last month.
+                {percentageChange >= 0 ? 'An increase' : 'A decrease'} of {Math.abs(percentageChange).toFixed(1)}% from last month.
             </p>
             <div className="h-[100px] w-full">
                 <ResponsiveContainer>
-                    <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                    <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
@@ -80,6 +92,7 @@ export function NetWorthCard() {
                                 border: '1px solid hsl(var(--border))',
                                 borderRadius: 'var(--radius)',
                             }}
+                            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Net Worth']}
                         />
                         <Area type="monotone" dataKey="netWorth" stroke="hsl(var(--primary))" fill="url(#colorNetWorth)" />
                     </AreaChart>

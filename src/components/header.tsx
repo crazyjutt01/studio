@@ -21,11 +21,11 @@ import {
 } from '@/components/ui/sidebar';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { collection } from 'firebase/firestore';
-import type { Alert } from '@/lib/data';
+import { collection, doc } from 'firebase/firestore';
+import type { Alert, UserData } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
 
 export function Header() {
@@ -33,6 +33,14 @@ export function Header() {
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
+  const { data: userData } = useDoc<UserData>(userDocRef);
 
   const alertsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -42,9 +50,18 @@ export function Header() {
   const { data: alerts } = useCollection<Alert>(alertsQuery);
 
   const handleLogout = async () => {
-    await auth.signOut();
-    router.push('/');
+    if (auth) {
+      await auth.signOut();
+      router.push('/');
+    }
   }
+  
+  const handleTestNotification = () => {
+    toast({
+        title: 'Test Notification',
+        description: 'This is just a test to show that notifications are working!',
+    });
+  };
 
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
 
@@ -94,7 +111,7 @@ export function Header() {
             )}
              <DropdownMenuSeparator />
              <DropdownMenuFooter className="p-2">
-                <Button variant="outline" size="sm" className="w-full">View all notifications</Button>
+                <Button variant="outline" size="sm" className="w-full" onClick={handleTestNotification}>Test Notification</Button>
              </DropdownMenuFooter>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -114,7 +131,7 @@ export function Header() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>{user ? 'My Account' : 'My Account'}</DropdownMenuLabel>
+          <DropdownMenuLabel>{userData ? userData.name : 'My Account'}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Settings</DropdownMenuItem>
           <DropdownMenuItem>Support</DropdownMenuItem>
