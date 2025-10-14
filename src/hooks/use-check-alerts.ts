@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useCallback } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, doc } from 'firebase/firestore';
-import type { Transaction, Budget, UserData, SavingsGoal } from '@/lib/data';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
+import { collection, query, doc, where, getDocs, limit } from 'firebase/firestore';
+import type { Transaction, Budget, UserData, SavingsGoal, Alert } from '@/lib/data';
 import { generateAlerts } from '@/ai/flows/alert-generator';
 import { useToast } from './use-toast';
 
@@ -38,20 +38,52 @@ export function useCheckAlerts() {
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const checkAlerts = useCallback(async () => {
-    if (user && userData && userData.smartReminders && transactionsData && budgetsData && savingsGoalsData && transactionsData.length > 0) {
+    if (user && firestore && userData && userData.smartReminders && transactionsData && budgetsData && savingsGoalsData && transactionsData.length > 0) {
       try {
-        await generateAlerts({
+        const alertSuggestions = await generateAlerts({
           userId: user.uid,
           transactions: JSON.stringify(transactionsData),
           budgets: JSON.stringify(budgetsData),
           goals: JSON.stringify(savingsGoalsData),
           monthlyIncome: userData.monthlyIncome,
         });
+
+        if (!alertSuggestions || alertSuggestions.length === 0) {
+            return;
+        }
+
+        const alertsCol = collection(firestore, `users/${user.uid}/alerts`);
+
+        for (const suggestion of alertSuggestions) {
+            if (suggestion.shouldCreate && suggestion.trigger) {
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                const recentAlertsQuery = query(
+                    alertsCol,
+                    where('trigger', '==', suggestion.trigger),
+                    where('timestamp', '>', sevenDaysAgo.toISOString()),
+                    limit(1)
+                );
+
+                const recentAlertsSnapshot = await getDocs(recentAlertsQuery);
+
+                if (recentAlertsSnapshot.empty) {
+                    const alertData: Omit<Alert, 'id'> = {
+                        userId: user.uid,
+                        type: suggestion.type!,
+                        message: suggestion.message!,
+                        trigger: suggestion.trigger,
+                        timestamp: new Date().toISOString(),
+                        isRead: false,
+                    };
+                    addDocumentNonBlocking(alertsCol, alertData);
+                }
+            }
+        }
       } catch (error) {
         console.error("Failed to check for alerts:", error);
       }
     }
-  }, [user, userData, transactionsData, budgetsData, savingsGoalsData, toast]);
+  }, [user, firestore, userData, transactionsData, budgetsData, savingsGoalsData, toast]);
 
   useEffect(() => {
     // This interval check can be for less frequent, summary-style alerts.

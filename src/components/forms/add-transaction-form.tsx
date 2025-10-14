@@ -15,9 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where, Timestamp, getDocs, limit } from 'firebase/firestore';
 import { Loader2, CalendarIcon } from 'lucide-react';
-import type { Transaction, UserData, Budget, SavingsGoal } from '@/lib/data';
+import type { Transaction, UserData, Budget, SavingsGoal, Alert } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -80,23 +80,59 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
   const { isSubmitting } = form.formState;
 
   const triggerAlertCheck = async (newTransaction: Omit<Transaction, 'id'>) => {
-    if (!user || !userData || !userData.smartReminders || !transactionsData || !budgetsData || !savingsGoalsData) {
+    if (!user || !firestore || !userData || !userData.smartReminders || !transactionsData || !budgetsData || !savingsGoalsData) {
       return;
     }
 
     try {
-      // Add the new transaction to the existing data for an up-to-date analysis
       const updatedTransactions = [...transactionsData, { ...newTransaction, id: 'temp' }];
 
-      await generateAlerts({
-        userId: user.uid,
+      const alertSuggestions = await generateAlerts({
         transactions: JSON.stringify(updatedTransactions),
         budgets: JSON.stringify(budgetsData),
         goals: JSON.stringify(savingsGoalsData),
         monthlyIncome: userData.monthlyIncome,
       });
+
+      if (!alertSuggestions || alertSuggestions.length === 0) {
+        return;
+      }
+      
+      const alertsCol = collection(firestore, `users/${user.uid}/alerts`);
+
+      for (const suggestion of alertSuggestions) {
+        if (suggestion.shouldCreate && suggestion.trigger) {
+           const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+           const recentAlertsQuery = query(
+             alertsCol,
+             where('trigger', '==', suggestion.trigger),
+             where('timestamp', '>', sevenDaysAgo.toISOString()),
+             limit(1)
+           );
+           
+           const recentAlertsSnapshot = await getDocs(recentAlertsQuery);
+
+           if(recentAlertsSnapshot.empty) {
+                const alertData: Omit<Alert, 'id'> = {
+                    userId: user.uid,
+                    type: suggestion.type!,
+                    message: suggestion.message!,
+                    trigger: suggestion.trigger,
+                    timestamp: new Date().toISOString(),
+                    isRead: false,
+                };
+                addDocumentNonBlocking(alertsCol, alertData);
+           }
+        }
+      }
+
     } catch (error) {
       console.error("Failed to trigger smart reminder check:", error);
+       toast({
+        variant: 'destructive',
+        title: 'Smart Reminder Failed',
+        description: 'Could not check for smart reminders due to an error.',
+      });
     }
   };
 
