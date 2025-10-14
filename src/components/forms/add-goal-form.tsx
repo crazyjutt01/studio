@@ -70,7 +70,7 @@ export function AddGoalForm({ onSuccess }: AddGoalFormProps) {
         deadline: values.deadline?.toISOString(),
         userId: user.uid,
       };
-      await addDocumentNonBlocking(goalsCol, goalData);
+      addDocumentNonBlocking(goalsCol, goalData);
 
       toast({
         title: 'Goal Added!',

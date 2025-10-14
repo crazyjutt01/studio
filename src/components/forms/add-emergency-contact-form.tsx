@@ -69,7 +69,7 @@ export function AddEmergencyContactForm({ onSuccess }: AddEmergencyContactFormPr
         ...values,
         userId: user.uid,
       };
-      await addDocumentNonBlocking(contactsCol, contactData);
+      addDocumentNonBlocking(contactsCol, contactData);
 
       toast({
         title: 'Contact Added!',
@@ -148,5 +148,3 @@ export function AddEmergencyContactForm({ onSuccess }: AddEmergencyContactFormPr
     </Form>
   );
 }
-
-    

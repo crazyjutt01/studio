@@ -72,7 +72,7 @@ export function AddBudgetForm({ onSuccess }: AddBudgetFormProps) {
         endDate: values.endDate.toISOString(),
         userId: user.uid,
       };
-      await addDocumentNonBlocking(budgetsCol, budgetData);
+      addDocumentNonBlocking(budgetsCol, budgetData);
 
       toast({
         title: 'Budget Added!',

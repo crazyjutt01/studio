@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Header } from '@/components/header';
 import { OverviewCard } from '@/components/dashboard/overview-card';
 import { RecentTransactionsCard } from '@/components/dashboard/recent-transactions-card';
@@ -9,7 +10,7 @@ import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase
 import type { CategoryData, Transaction, UserData } from '@/lib/data';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
 
-function getCategoryData(transactions: Transaction[] | null): CategoryData[] | null {
+const getCategoryData = (transactions: Transaction[] | null): CategoryData[] | null => {
   if (!transactions) return null;
 
   const categoryMap: { [key: string]: number } = {
@@ -20,9 +21,9 @@ function getCategoryData(transactions: Transaction[] | null): CategoryData[] | n
   };
 
   transactions.forEach(transaction => {
-    // Ensure category exists before adding to it
-    if (Object.prototype.hasOwnProperty.call(categoryMap, transaction.category)) {
-      categoryMap[transaction.category] += transaction.amount;
+    const category = transaction.category;
+    if (category && Object.prototype.hasOwnProperty.call(categoryMap, category)) {
+      categoryMap[category] += transaction.amount;
     }
   });
 
@@ -50,8 +51,8 @@ export default function DashboardPage() {
   const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
 
-  const categoryData = getCategoryData(transactionsData);
-  const totalSpending = transactionsData ? transactionsData.reduce((sum, t) => sum + t.amount, 0) : null;
+  const categoryData = useMemo(() => getCategoryData(transactionsData), [transactionsData]);
+  const totalSpending = useMemo(() => transactionsData ? transactionsData.reduce((sum, t) => sum + t.amount, 0) : null, [transactionsData]);
 
   return (
     <>
