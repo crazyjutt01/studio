@@ -28,7 +28,7 @@ const menuItems = [
 const secondaryMenuItems = [
     { href: '#', icon: LifeBuoy, label: 'Help & Support' },
     { href: '/crisis-guardian', icon: ShieldAlert, label: 'CrisisGuardian' },
-    { href: '#', icon: Settings, label: 'Settings' },
+    { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 export function SidebarNav() {

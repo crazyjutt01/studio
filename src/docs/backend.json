@@ -1,0 +1,443 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the FinSafe application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName"
+      ]
+    },
+    "Budget": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Budget",
+      "type": "object",
+      "description": "Represents a user's budget.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the budget."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Budget)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the budget (e.g., 'Monthly Budget')."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total budget amount."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of the budget.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of the budget.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "amount"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a financial transaction.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Transaction)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the transaction.",
+          "format": "date-time"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the transaction."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the transaction."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to Category. (Relationship: Category 1:N Transaction)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "date",
+        "amount",
+        "description"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a category for classifying transactions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the category."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the category (e.g., 'Food', 'Travel')."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Category)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "userId"
+      ]
+    },
+    "SavingGoal": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SavingGoal",
+      "type": "object",
+      "description": "Represents a user's saving goal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the saving goal."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N SavingGoal)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the saving goal (e.g., 'Vacation Fund')."
+        },
+        "targetAmount": {
+          "type": "number",
+          "description": "The target amount to be saved."
+        },
+        "currentAmount": {
+          "type": "number",
+          "description": "The current amount saved."
+        },
+        "deadline": {
+          "type": "string",
+          "description": "The deadline for achieving the saving goal.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "targetAmount",
+        "currentAmount"
+      ]
+    },
+    "Alert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Alert",
+      "type": "object",
+      "description": "Represents a smart notification alert for the user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the alert."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Alert)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of the alert (e.g., 'Budget Limit', 'Overspending')."
+        },
+        "message": {
+          "type": "string",
+          "description": "The alert message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of the alert.",
+          "format": "date-time"
+        },
+        "isRead": {
+          "type": "boolean",
+          "description": "Indicates whether the alert has been read by the user."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "type",
+        "message",
+        "timestamp",
+        "isRead"
+      ]
+    },
+    "EmergencyContact": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EmergencyContact",
+      "type": "object",
+      "description": "Represents a user's emergency contact.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the emergency contact."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N EmergencyContact)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the emergency contact."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the emergency contact."
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Relationship of the emergency contact to the user (e.g., 'Family', 'Friend')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "phone",
+        "relationship"
+      ]
+    },
+    "CrisisSupport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CrisisSupport",
+      "type": "object",
+      "description": "Represents AI-generated support for a user in crisis.",
+      "properties": {
+        "transactions": {
+          "type": "string",
+          "description": "A JSON string of the user's recent transactions."
+        },
+        "budgets": {
+          "type": "string",
+          "description": "A JSON string of the user's budgets."
+        },
+        "savingGoals": {
+          "type": "string",
+          "description": "A JSON string of the user's saving goals."
+        },
+        "friendlyMessage": {
+            "type": "string"
+        },
+        "recoveryPlan": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "details": {
+                "type": "string"
+              }
+            },
+            "required": ["title", "details"]
+          }
+        }
+      },
+      "required": ["transactions", "budgets", "savingGoals", "friendlyMessage", "recoveryPlan"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.  The 'userId' parameter identifies the user's document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/budgets/{budgetId}",
+        "definition": {
+          "entityName": "Budget",
+          "schema": {
+            "$ref": "#/backend/entities/Budget"
+          },
+          "description": "Stores budget information for a specific user. The 'userId' parameter identifies the user, and 'budgetId' identifies the specific budget.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "budgetId",
+              "description": "The unique identifier for the budget."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores transaction information for a specific user. The 'userId' parameter identifies the user, and 'transactionId' identifies the specific transaction.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for the transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores categories for transactions for a specific user. The 'userId' parameter identifies the user, and 'categoryId' identifies the specific category.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for the category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/savingGoals/{savingGoalId}",
+        "definition": {
+          "entityName": "SavingGoal",
+          "schema": {
+            "$ref": "#/backend/entities/SavingGoal"
+          },
+          "description": "Stores saving goal information for a specific user. The 'userId' parameter identifies the user, and 'savingGoalId' identifies the specific saving goal.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "savingGoalId",
+              "description": "The unique identifier for the saving goal."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/alerts/{alertId}",
+        "definition": {
+          "entityName": "Alert",
+          "schema": {
+            "$ref": "#/backend/entities/Alert"
+          },
+          "description": "Stores alert information for a specific user. The 'userId' parameter identifies the user, and 'alertId' identifies the specific alert.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "alertId",
+              "description": "The unique identifier for the alert."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/emergencyContacts/{contactId}",
+        "definition": {
+          "entityName": "EmergencyContact",
+          "schema": {
+            "$ref": "#/backend/entities/EmergencyContact"
+          },
+          "description": "Stores emergency contact information for a specific user. The 'userId' parameter identifies the user, and 'contactId' identifies the specific contact.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "contactId",
+              "description": "The unique identifier for the emergency contact."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure data isolation and efficient querying by leveraging path-based ownership for user-specific data. Each user has their own dedicated collections for budgets, transactions, categories, saving goals, and alerts. This approach simplifies security rules and allows for direct querying of a user's resources.  The structure avoids hierarchical authorization dependencies by directly associating all user-related data under the respective user ID, enabling atomic operations and straightforward access control based on `request.auth.uid`. This eliminates the need for `get()` calls in security rules, promoting Authorization Independence. The AI-related data can be stored under the user as well, further simplifying the data structure.  This design supports secure list operations (QAPs) because each collection is scoped to a specific user, and rules can easily enforce that only the authenticated user can access their own data. In particular, each collection is segregated by `userId`.  Timestamps are included in `Transaction` and `Alert` to maintain chronological order, and the `userId` field is enforced to ensure ownership."
+  }
+}

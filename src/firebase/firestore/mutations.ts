@@ -40,38 +40,43 @@ const defaultAlerts: Omit<Alert, 'id' | 'userId'>[] = [
 
 export async function seedDatabase(db: Firestore, userId: string) {
     try {
-        // NOTE: The user document is now created on sign-up. 
-        // This function seeds the sub-collections.
+        const batch = writeBatch(db);
 
         // Seed transactions
         const transactionsCol = collection(db, `users/${userId}/transactions`);
-        for (const transaction of defaultTransactions) {
-            await addDoc(transactionsCol, { ...transaction, userId });
-        }
+        defaultTransactions.forEach(transaction => {
+            const docRef = doc(transactionsCol);
+            batch.set(docRef, { ...transaction, userId });
+        });
 
         // Seed savings goals
         const savingsCol = collection(db, `users/${userId}/savingGoals`);
-        for (const goal of defaultSavingsGoals) {
-            await addDoc(savingsCol, { ...goal, userId });
-        }
+        defaultSavingsGoals.forEach(goal => {
+            const docRef = doc(savingsCol);
+            batch.set(docRef, { ...goal, userId });
+        });
 
         // Seed budgets
         const budgetsCol = collection(db, `users/${userId}/budgets`);
-        for (const budget of defaultBudgets) {
-            await addDoc(budgetsCol, { ...budget, userId });
-        }
+        defaultBudgets.forEach(budget => {
+            const docRef = doc(budgetsCol);
+            batch.set(docRef, { ...budget, userId });
+        });
 
         // Seed alerts
         const alertsCol = collection(db, `users/${userId}/alerts`);
-        for (const alert of defaultAlerts) {
-            await addDoc(alertsCol, { ...alert, userId });
-        }
+        defaultAlerts.forEach(alert => {
+            const docRef = doc(alertsCol);
+            batch.set(docRef, { ...alert, userId });
+        });
+
+        await batch.commit();
 
     } catch (error) {
         console.error("Error seeding database:", error);
         // We can't use the permission error emitter here reliably during the first write.
         // A console error is sufficient for debugging this initial setup phase.
-        if (error instanceof Error && 'code' in error && error.code === 'permission-denied') {
+        if (error instanceof Error && 'code' in error && (error as any).code === 'permission-denied') {
              throw new Error("Firestore Security Rules denied the initial database seed. Please check your rules to allow writes to the user's own data path.");
         }
         throw error; // Re-throw other errors

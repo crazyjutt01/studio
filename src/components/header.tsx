@@ -131,9 +131,9 @@ export function Header() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>{userData ? userData.name : 'My Account'}</DropdownMenuLabel>
+          <DropdownMenuLabel>{userData ? `${userData.firstName} ${userData.lastName}` : 'My Account'}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push('/settings')}>Settings</DropdownMenuItem>
           <DropdownMenuItem>Support</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
