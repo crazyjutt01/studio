@@ -1,156 +1,205 @@
-/**
- * @fileoverview Firestore Security Rules for FinSafe application.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model where each user has exclusive
- * access to their own data, including budgets, transactions, categories, saving goals, and alerts.
- *
- * Data Structure:
- * All data is nested under /users/{userId}, ensuring data isolation and efficient querying.
- *
- * Key Security Decisions:
- * - Users can only access their own data.
- * - Listing collections is restricted to the owner of the user subcollection.
- * - Users can only create a user document for themselves (self-registration).
- *
- * Denormalization for Authorization:
- *  N/A - No denormalization is required as the path-based structure inherently provides user isolation and ownership.
- *
- * Structural Segregation:
- *  N/A - No segregation needed since all user data is already in separate collections under the user's ID.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Root-level access restrictions. Prevents access to the entire database.
-     * @path /databases/{database}/documents
-     * @allow (get, list) if false
-     * @deny (create, update, delete) if true
-     * @principle Prevents blanket access to the database; all access must be defined more granularly.
-     */
-    match /{document=**} {
-       allow read, write: if false;
-    }
-
-    // Helper function to check if the user is signed in
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the resource
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Helper function to check if the user is the owner of the resource and if the resource exists.
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Controls access to user profile documents.
+     * @description Secure access to user profile information.
      * @path /users/{userId}
-     * @allow (get) Authenticated users can read their own profile data.
-     * @allow (create) Authenticated users can create their own profile if the userId matches their auth.uid.
-     * @allow (update, delete) Authenticated users can update and delete their own profile data.
-     * @deny (get) Anonymous users cannot read user profile data.
-     * @deny (create) Users cannot create profiles for other users.
-     * @deny (update, delete) Users cannot modify or delete other user's profiles.
-     * @principle Enforces document ownership for writes.  Allows self-creation on `create`.
+     * @allow (create) User with UID 'user123' can create their own user document.
+     * @allow (get) User with UID 'user123' can get their own user document.
+     * @allow (update) User with UID 'user123' can update their own user document.
+     * @allow (delete) User with UID 'user123' can delete their own user document.
+     * @deny (create) User with UID 'user456' cannot create a user document for 'user123'.
+     * @deny (update) User with UID 'user456' cannot update the user document for 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete the user document for 'user123'.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      allow get: if isSignedIn() && isOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Controls access to budget documents for a specific user.
+     * @description Secure access to budget information for a specific user.
      * @path /users/{userId}/budgets/{budgetId}
-     * @allow (get, list) Authenticated users can read their own budget data.
-     * @allow (create, update, delete) Authenticated users can create, update, and delete their own budget data.
-     * @deny (get, list) Anonymous users cannot read user budget data.
-     * @deny (create, update, delete) Users cannot modify or delete other user's budgets.
+     * @allow (create) User with UID 'user123' can create a budget document under their user document.
+     * @allow (get) User with UID 'user123' can get a budget document under their user document.
+     * @allow (list) User with UID 'user123' can list budget documents under their user document.
+     * @allow (update) User with UID 'user123' can update a budget document under their user document.
+     * @allow (delete) User with UID 'user123' can delete a budget document under their user document.
+     * @deny (create) User with UID 'user456' cannot create a budget document under the user document of 'user123'.
+     * @deny (get) User with UID 'user456' cannot get a budget document under the user document of 'user123'.
+     * @deny (list) User with UID 'user456' cannot list budget documents under the user document of 'user123'.
+     * @deny (update) User with UID 'user456' cannot update a budget document under the user document of 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete a budget document under the user document of 'user123'.
      * @principle Restricts access to a user's own budget data.
      */
     match /users/{userId}/budgets/{budgetId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Controls access to transaction documents for a specific user.
+     * @description Secure access to transaction information for a specific user.
      * @path /users/{userId}/transactions/{transactionId}
-     * @allow (get, list) Authenticated users can read their own transaction data.
-     * @allow (create, update, delete) Authenticated users can create, update, and delete their own transaction data.
-     * @deny (get, list) Anonymous users cannot read user transaction data.
-     * @deny (create, update, delete) Users cannot modify or delete other user's transactions.
+     * @allow (create) User with UID 'user123' can create a transaction document under their user document.
+     * @allow (get) User with UID 'user123' can get a transaction document under their user document.
+     * @allow (list) User with UID 'user123' can list transaction documents under their user document.
+     * @allow (update) User with UID 'user123' can update a transaction document under their user document.
+     * @allow (delete) User with UID 'user123' can delete a transaction document under their user document.
+     * @deny (create) User with UID 'user456' cannot create a transaction document under the user document of 'user123'.
+     * @deny (get) User with UID 'user456' cannot get a transaction document under the user document of 'user123'.
+     * @deny (list) User with UID 'user456' cannot list transaction documents under the user document of 'user123'.
+     * @deny (update) User with UID 'user456' cannot update a transaction document under the user document of 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete a transaction document under the user document of 'user123'.
      * @principle Restricts access to a user's own transaction data.
      */
     match /users/{userId}/transactions/{transactionId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Controls access to category documents for a specific user.
+     * @description Secure access to category information for a specific user.
      * @path /users/{userId}/categories/{categoryId}
-     * @allow (get, list) Authenticated users can read their own category data.
-     * @allow (create, update, delete) Authenticated users can create, update, and delete their own category data.
-     * @deny (get, list) Anonymous users cannot read user category data.
-     * @deny (create, update, delete) Users cannot modify or delete other user's categories.
+     * @allow (create) User with UID 'user123' can create a category document under their user document.
+     * @allow (get) User with UID 'user123' can get a category document under their user document.
+     * @allow (list) User with UID 'user123' can list category documents under their user document.
+     * @allow (update) User with UID 'user123' can update a category document under their user document.
+     * @allow (delete) User with UID 'user123' can delete a category document under their user document.
+     * @deny (create) User with UID 'user456' cannot create a category document under the user document of 'user123'.
+     * @deny (get) User with UID 'user456' cannot get a category document under the user document of 'user123'.
+     * @deny (list) User with UID 'user456' cannot list category documents under the user document of 'user123'.
+     * @deny (update) User with UID 'user456' cannot update a category document under the user document of 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete a category document under the user document of 'user123'.
      * @principle Restricts access to a user's own category data.
      */
     match /users/{userId}/categories/{categoryId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Controls access to saving goal documents for a specific user.
+     * @description Secure access to saving goal information for a specific user.
      * @path /users/{userId}/savingGoals/{savingGoalId}
-     * @allow (get, list) Authenticated users can read their own saving goal data.
-     * @allow (create, update, delete) Authenticated users can create, update, and delete their own saving goal data.
-     * @deny (get, list) Anonymous users cannot read user saving goal data.
-     * @deny (create, update, delete) Users cannot modify or delete other user's saving goals.
+     * @allow (create) User with UID 'user123' can create a saving goal document under their user document.
+     * @allow (get) User with UID 'user123' can get a saving goal document under their user document.
+     * @allow (list) User with UID 'user123' can list saving goal documents under their user document.
+     * @allow (update) User with UID 'user123' can update a saving goal document under their user document.
+     * @allow (delete) User with UID 'user123' can delete a saving goal document under their user document.
+     * @deny (create) User with UID 'user456' cannot create a saving goal document under the user document of 'user123'.
+     * @deny (get) User with UID 'user456' cannot get a saving goal document under the user document of 'user123'.
+     * @deny (list) User with UID 'user456' cannot list saving goal documents under the user document of 'user123'.
+     * @deny (update) User with UID 'user456' cannot update a saving goal document under the user document of 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete a saving goal document under the user document of 'user123'.
      * @principle Restricts access to a user's own saving goal data.
      */
     match /users/{userId}/savingGoals/{savingGoalId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Controls access to alert documents for a specific user.
+     * @description Secure access to alert information for a specific user.
      * @path /users/{userId}/alerts/{alertId}
-     * @allow (get, list) Authenticated users can read their own alert data.
-     * @allow (create, update, delete) Authenticated users can create, update, and delete their own alert data.
-     * @deny (get, list) Anonymous users cannot read user alert data.
-     * @deny (create, update, delete) Users cannot modify or delete other user's alerts.
+     * @allow (create) User with UID 'user123' can create an alert document under their user document.
+     * @allow (get) User with UID 'user123' can get an alert document under their user document.
+     * @allow (list) User with UID 'user123' can list alert documents under their user document.
+     * @allow (update) User with UID 'user123' can update an alert document under their user document.
+     * @allow (delete) User with UID 'user123' can delete an alert document under their user document.
+     * @deny (create) User with UID 'user456' cannot create an alert document under the user document of 'user123'.
+     * @deny (get) User with UID 'user456' cannot get an alert document under the user document of 'user123'.
+     * @deny (list) User with UID 'user456' cannot list alert documents under the user document of 'user123'.
+     * @deny (update) User with UID 'user456' cannot update an alert document under the user document of 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete an alert document under the user document of 'user123'.
      * @principle Restricts access to a user's own alert data.
      */
     match /users/{userId}/alerts/{alertId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Secure access to emergency contact information for a specific user.
+     * @path /users/{userId}/emergencyContacts/{contactId}
+     * @allow (create) User with UID 'user123' can create an emergency contact document under their user document.
+     * @allow (get) User with UID 'user123' can get an emergency contact document under their user document.
+     * @allow (list) User with UID 'user123' can list emergency contact documents under their user document.
+     * @allow (update) User with UID 'user123' can update an emergency contact document under their user document.
+     * @allow (delete) User with UID 'user123' can delete an emergency contact document under their user document.
+     * @deny (create) User with UID 'user456' cannot create an emergency contact document under the user document of 'user123'.
+     * @deny (get) User with UID 'user456' cannot get an emergency contact document under the user document of 'user123'.
+     * @deny (list) User with UID 'user456' cannot list emergency contact documents under the user document of 'user123'.
+     * @deny (update) User with UID 'user456' cannot update an emergency contact document under the user document of 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete an emergency contact document under the user document of 'user123'.
+     * @principle Restricts access to a user's own emergency contact data.
+     */
+    match /users/{userId}/emergencyContacts/{contactId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
   }
 }
