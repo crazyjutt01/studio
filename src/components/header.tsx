@@ -22,16 +22,25 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export function Header() {
   const { user } = useUser();
   const auth = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     await auth.signOut();
     router.push('/');
   }
+
+  const handleNotificationClick = () => {
+    toast({
+      title: "Test Notification",
+      description: "Your notification system is working correctly!",
+    });
+  };
 
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
 
@@ -52,7 +61,7 @@ export function Header() {
           </div>
         </form>
       </div>
-      <Button variant="ghost" size="icon" className="rounded-full">
+      <Button variant="ghost" size="icon" className="rounded-full" onClick={handleNotificationClick}>
         <Bell className="h-4 w-4" />
         <span className="sr-only">Toggle notifications</span>
       </Button>
