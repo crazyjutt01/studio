@@ -255,6 +255,34 @@
         "phone",
         "relationship"
       ]
+    },
+    "CrisisSupport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CrisisSupport",
+      "type": "object",
+      "description": "Represents AI-generated support for a user in crisis.",
+      "properties": {
+        "crisisDescription": {
+          "type": "string",
+          "description": "The user's description of their financial crisis."
+        },
+        "supportSteps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "details": {
+                "type": "string"
+              }
+            },
+            "required": ["title", "details"]
+          }
+        }
+      },
+      "required": ["crisisDescription", "supportSteps"]
     }
   },
   "auth": {
@@ -405,4 +433,3 @@
     "reasoning": "The Firestore structure is designed to ensure data isolation and efficient querying by leveraging path-based ownership for user-specific data. Each user has their own dedicated collections for budgets, transactions, categories, saving goals, and alerts. This approach simplifies security rules and allows for direct querying of a user's resources.  The structure avoids hierarchical authorization dependencies by directly associating all user-related data under the respective user ID, enabling atomic operations and straightforward access control based on `request.auth.uid`. This eliminates the need for `get()` calls in security rules, promoting Authorization Independence. The AI-related data can be stored under the user as well, further simplifying the data structure.  This design supports secure list operations (QAPs) because each collection is scoped to a specific user, and rules can easily enforce that only the authenticated user can access their own data. In particular, each collection is segregated by `userId`.  Timestamps are included in `Transaction` and `Alert` to maintain chronological order, and the `userId` field is enforced to ensure ownership."
   }
 }
-    
