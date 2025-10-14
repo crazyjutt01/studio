@@ -13,6 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuFooter
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { useAuth, useCollection, useFirestore, useMemoFirebase, useUser, useDoc, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { collection, doc, orderBy, query } from 'firebase/firestore';
@@ -59,6 +60,31 @@ export function Header() {
     if (!user || !firestore) return;
     const alertRef = doc(firestore, `users/${user.uid}/alerts/${alertId}`);
     updateDocumentNonBlocking(alertRef, { isRead: true });
+  }
+
+  const handleTestNotification = () => {
+    if (!user || !firestore) {
+      toast({
+        variant: "destructive",
+        title: "Not Logged In",
+        description: "You must be logged in to create a test notification."
+      });
+      return;
+    }
+    const alertsCol = collection(firestore, `users/${user.uid}/alerts`);
+    const testAlert: Omit<Alert, 'id'> = {
+      userId: user.uid,
+      type: "Test Notification",
+      message: "This is a test alert to check the system.",
+      timestamp: new Date().toISOString(),
+      isRead: false,
+      trigger: "manual_test"
+    };
+    addDocumentNonBlocking(alertsCol, testAlert);
+    toast({
+      title: "Test Notification Sent",
+      description: "A test alert has been added to your notifications."
+    });
   }
 
   const unreadAlertsCount = alerts?.filter(a => !a.isRead).length ?? 0;
@@ -100,15 +126,21 @@ export function Header() {
             <DropdownMenuSeparator />
             {alerts && alerts.length > 0 ? (
                 alerts.slice(0, 5).map(alert => (
-                    <DropdownMenuItem key={alert.id} onSelect={() => handleMarkAsRead(alert.id)} className={`flex-col items-start gap-1 ${!alert.isRead ? 'bg-secondary/50' : ''}`}>
+                    <DropdownMenuItem key={alert.id} onSelect={(e) => { e.preventDefault(); handleMarkAsRead(alert.id); }} className={`flex-col items-start gap-1 ${!alert.isRead ? 'bg-secondary/50' : ''}`}>
                         <p className="font-medium">{alert.type}</p>
-                        <p className="text-xs text-muted-foreground">{alert.message}</p>
+                        <p className="text-xs text-muted-foreground whitespace-normal">{alert.message}</p>
                         <p className="text-xs text-muted-foreground/80">{formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}</p>
                     </DropdownMenuItem>
                 ))
             ) : (
                 <p className="p-4 text-sm text-center text-muted-foreground">No new notifications</p>
             )}
+             <DropdownMenuSeparator />
+            <DropdownMenuFooter>
+                <Button variant="outline" size="sm" className="w-full" onClick={handleTestNotification}>
+                    Test Notification
+                </Button>
+            </DropdownMenuFooter>
         </DropdownMenuContent>
       </DropdownMenu>
 
