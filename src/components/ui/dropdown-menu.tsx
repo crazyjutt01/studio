@@ -168,6 +168,18 @@ const DropdownMenuSeparator = React.forwardRef<
 ))
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
 
+const DropdownMenuFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn("flex items-center p-1", className)}
+        {...props}
+    />
+))
+DropdownMenuFooter.displayName = "DropdownMenuFooter"
+
 const DropdownMenuShortcut = ({
   className,
   ...props
@@ -197,4 +209,5 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
+  DropdownMenuFooter
 }

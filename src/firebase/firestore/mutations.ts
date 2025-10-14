@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import type { Transaction, SavingsGoal, UserData, Budget } from '@/lib/data';
+import type { Transaction, SavingsGoal, UserData, Budget, Alert } from '@/lib/data';
 import { addDocumentNonBlocking } from '@/firebase';
 
 // Default data for seeding
@@ -33,13 +33,18 @@ const defaultBudgets: Omit<Budget, 'id' | 'userId'>[] = [
     { name: 'Entertainment', amount: 200, startDate: new Date().toISOString(), endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString() }
 ];
 
+const defaultAlerts: Omit<Alert, 'id' | 'userId'>[] = [
+    { type: 'Overspending', message: 'You have exceeded your monthly budget for Shopping by $50.', timestamp: new Date().toISOString(), isRead: false },
+    { type: 'Goal Update', message: 'You are 75% of the way to your Vacation to Japan goal!', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), isRead: true },
+]
+
 export async function seedDatabase(db: Firestore, userId: string) {
     try {
         // Seed user profile
         const userRef = doc(db, 'users', userId);
         const userData: UserData = {
-            email: null, // Anonymous users have null email
             name: 'Demo User',
+            email: null,
             avatarUrl: 'user-avatar-1',
             monthlyIncome: 5000,
             savingGoals: 'Save for a new car and a vacation to Japan.',
@@ -63,6 +68,13 @@ export async function seedDatabase(db: Firestore, userId: string) {
         for (const budget of defaultBudgets) {
             await addDocumentNonBlocking(budgetsCol, { ...budget, userId });
         }
+
+        // Seed alerts
+        const alertsCol = collection(db, `users/${userId}/alerts`);
+        for (const alert of defaultAlerts) {
+            await addDocumentNonBlocking(alertsCol, { ...alert, userId });
+        }
+
     } catch (error) {
         console.error("Error seeding database:", error);
         // We can't use the permission error emitter here reliably during the first write.

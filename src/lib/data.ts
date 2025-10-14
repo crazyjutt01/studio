@@ -15,8 +15,8 @@ export type Budget = {
     userId: string;
     name: string;
     amount: number;
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
 };
 
 export type SavingsGoal = {
@@ -43,6 +43,15 @@ export type UserData = {
   avatarUrl: string;
   monthlyIncome: number;
   savingGoals: string;
+};
+
+export type Alert = {
+  id: string;
+  userId: string;
+  type: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
 };
 
 export type CategoryData = {
