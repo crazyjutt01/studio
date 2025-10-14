@@ -37,7 +37,7 @@ export function SavingsGoalsCard() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Savings Goals (GoalGuru)
+              Savings Goals
             </CardTitle>
             <CardDescription>
               Track your progress towards your financial goals.

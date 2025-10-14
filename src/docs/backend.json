@@ -294,6 +294,30 @@
         }
       },
       "required": ["transactions", "budgets", "savingGoals", "friendlyMessage", "recoveryPlan"]
+    },
+    "GoalAdvice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GoalAdvice",
+      "type": "object",
+      "description": "Represents AI-generated advice for achieving savings goals.",
+      "properties": {
+        "income": {
+          "type": "number"
+        },
+        "expenses": {
+          "type": "string"
+        },
+        "savingGoals": {
+          "type": "string"
+        },
+        "tips": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["income", "expenses", "savingGoals", "tips"]
     }
   },
   "auth": {
