@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FinSafeLogo } from '@/components/icons';
-import { useAuth, useUser, useFirestore, initiateEmailSignUp, seedDatabase, initiateGoogleSignIn } from '@/firebase';
+import { useAuth, useUser, useFirestore, initiateEmailSignUp, initiateGoogleSignIn } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -72,11 +72,10 @@ export default function SignUpPage() {
            lastName: values.lastName,
            email: values.email,
            avatarUrl: 'user-avatar-1',
-           monthlyIncome: 5000,
+           monthlyIncome: 0,
            savingGoals: 'Get started with FinSafe!',
        });
 
-       await seedDatabase(firestore, userCredential.user.uid);
        router.push('/dashboard');
        
      } catch (error: any) {
@@ -109,10 +108,9 @@ export default function SignUpPage() {
            lastName: lastName || 'User',
            email: userCredential.user.email,
            avatarUrl: 'user-avatar-1',
-           monthlyIncome: 5000,
+           monthlyIncome: 0,
            savingGoals: 'Get started with FinSafe!',
         });
-        await seedDatabase(firestore, userCredential.user.uid);
       }
       router.push('/dashboard');
     } catch (error: any) {

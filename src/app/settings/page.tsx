@@ -1,6 +1,6 @@
 'use client';
 import { Header } from '@/components/header';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserData } from '@/lib/data';
@@ -152,19 +152,7 @@ export default function SettingsPage() {
                                         </FormItem>
                                     )}
                                 />
-                                <FormField
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email</FormLabel>
-                                            <FormControl>
-                                                <Input disabled value={userData?.email || ''} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                               
                                 <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Save Changes

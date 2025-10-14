@@ -38,7 +38,8 @@ export type EmergencyContact = {
 
 export type UserData = {
   id?: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string | null;
   avatarUrl: string;
   monthlyIncome: number;
