@@ -13,27 +13,28 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     const setupUser = async () => {
-      if (user && firestore) {
-        // Check if the user document exists.
+      // Only proceed if a user is logged in and we are in the sign-in process
+      if (user && firestore && isSigningIn) {
+        setIsSeeding(true); // Start showing the seeding indicator
+        // Check if the user document already exists.
         const userDocRef = doc(firestore, `users/${user.uid}`);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
           // If the document doesn't exist, it's a new user. Seed the database.
-          setIsSeeding(true);
           try {
             await seedDatabase(firestore, user.uid);
           } catch (error) {
             console.error("Failed to seed database:", error);
-            // Handle seeding failure if necessary, e.g., show an error to the user
-          } finally {
-            setIsSeeding(false);
+            // Handle seeding failure if necessary
           }
         }
-        // Whether the user is new or returning, if the data is there (or has been seeded), we can redirect.
+        // Whether the user is new or returning, if the data is there (or has been seeded), redirect.
+        setIsSeeding(false);
         router.push('/dashboard');
       }
     };
@@ -41,23 +42,39 @@ export default function LoginPage() {
     if (!isUserLoading) {
       setupUser();
     }
-  }, [user, isUserLoading, firestore, router]);
+  }, [user, isUserLoading, firestore, router, isSigningIn]);
 
   const handleLogin = () => {
     if (auth) {
+        setIsSigningIn(true);
         initiateAnonymousSignIn(auth);
     }
   };
 
-  if (isUserLoading || isSeeding || user) {
+  // While signing in, show a full-screen loader.
+  if (isUserLoading || isSigningIn) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        {isSeeding && <p className="mt-4 text-muted-foreground">Setting up your account...</p>}
+        <p className="mt-4 text-muted-foreground">
+          {isSeeding ? 'Setting up your account...' : 'Initializing...'}
+        </p>
       </div>
     );
   }
 
+  // If user is already logged in (e.g., returning user), redirect them.
+  if (user) {
+    router.push('/dashboard');
+    return (
+       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Redirecting to your dashboard...</p>
+      </div>
+    );
+  }
+
+  // Default landing page view for new/logged-out users.
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
       <div className="flex flex-col items-center gap-6 text-center">
