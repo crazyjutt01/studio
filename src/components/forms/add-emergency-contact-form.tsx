@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocument } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import type { EmergencyContact } from '@/lib/data';
@@ -69,7 +69,7 @@ export function AddEmergencyContactForm({ onSuccess }: AddEmergencyContactFormPr
         ...values,
         userId: user.uid,
       };
-      await addDocument(contactsCol, contactData);
+      await addDocumentNonBlocking(contactsCol, contactData);
 
       toast({
         title: 'Contact Added!',
