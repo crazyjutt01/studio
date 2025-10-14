@@ -210,6 +210,10 @@
         "isRead": {
           "type": "boolean",
           "description": "Indicates whether the alert has been read by the user."
+        },
+        "budgetName": {
+            "type": "string",
+            "description": "The name of the budget this alert is associated with."
         }
       },
       "required": [

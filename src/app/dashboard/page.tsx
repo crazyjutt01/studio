@@ -7,8 +7,9 @@ import { RecentTransactionsCard } from '@/components/dashboard/recent-transactio
 import { useUser } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import type { CategoryData, Transaction, UserData } from '@/lib/data';
+import type { Budget, CategoryData, Transaction, UserData } from '@/lib/data';
 import { NetWorthCard } from '@/components/dashboard/net-worth-card';
+import { useCheckAlerts } from '@/hooks/use-check-alerts';
 
 const getCategoryData = (transactions: Transaction[] | null): CategoryData[] | null => {
   if (!transactions) return null;
@@ -48,8 +49,17 @@ export default function DashboardPage() {
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
 
+  const budgetsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, `users/${user.uid}/budgets`));
+  }, [user, firestore]);
+
   const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
+  const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
+
+  // Hook to check for alerts
+  useCheckAlerts();
 
   const categoryData = useMemo(() => getCategoryData(transactionsData), [transactionsData]);
   const totalSpending = useMemo(() => transactionsData ? transactionsData.reduce((sum, t) => sum + t.amount, 0) : null, [transactionsData]);
