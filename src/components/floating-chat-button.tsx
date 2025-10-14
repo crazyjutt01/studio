@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { MessageSquare } from 'lucide-react';
-import { Dialog, DialogContent } from './ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import { AdvisorAICard } from './dashboard/advisor-ai-card';
 
 export function FloatingChatButton() {
@@ -20,6 +20,7 @@ export function FloatingChatButton() {
       </Button>
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         <DialogContent className="sm:max-w-[625px] p-0">
+            <DialogTitle className="sr-only">AdvisorAI Chat</DialogTitle>
             <AdvisorAICard isChat={true}/>
         </DialogContent>
       </Dialog>
