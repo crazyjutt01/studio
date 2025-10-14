@@ -22,6 +22,10 @@
         "lastName": {
           "type": "string",
           "description": "User's last name."
+        },
+        "assets": {
+            "type": "number",
+            "description": "The total value of the user's assets."
         }
       },
       "required": [

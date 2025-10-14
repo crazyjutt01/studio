@@ -74,6 +74,7 @@ export default function SignUpPage() {
            avatarUrl: 'user-avatar-1',
            monthlyIncome: 0,
            savingGoals: 'Get started with FinSafe!',
+           assets: 0,
        });
 
        router.push('/dashboard');
@@ -110,6 +111,7 @@ export default function SignUpPage() {
            avatarUrl: 'user-avatar-1',
            monthlyIncome: 0,
            savingGoals: 'Get started with FinSafe!',
+           assets: 0,
         });
       }
       router.push('/dashboard');

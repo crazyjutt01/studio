@@ -26,6 +26,7 @@ const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   monthlyIncome: z.coerce.number().positive('Monthly income must be a positive number'),
+  assets: z.coerce.number().min(0, 'Assets cannot be negative'),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -48,6 +49,7 @@ export default function SettingsPage() {
       firstName: '',
       lastName: '',
       monthlyIncome: 0,
+      assets: 0,
     },
   });
 
@@ -57,6 +59,7 @@ export default function SettingsPage() {
         firstName: userData.firstName,
         lastName: userData.lastName,
         monthlyIncome: userData.monthlyIncome,
+        assets: userData.assets || 0,
       });
     }
   }, [userData, form]);
@@ -147,6 +150,19 @@ export default function SettingsPage() {
                                             <FormLabel>Monthly Income</FormLabel>
                                             <FormControl>
                                                 <Input type="number" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="assets"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Current Assets</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="Value of investments, property, etc." {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

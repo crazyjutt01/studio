@@ -7,23 +7,27 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Skeleton } from '../ui/skeleton';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 import type { SavingsGoal, UserData } from '@/lib/data';
 import { Scale } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { subMonths, format } from 'date-fns';
 
 // Helper to generate chart data
-const generateChartData = (savingsGoals: SavingsGoal[] | null) => {
-    if (!savingsGoals) return [];
+const generateChartData = (totalAssets: number) => {
+    if (totalAssets === null) return [];
     
     const data = Array.from({ length: 6 }).map((_, i) => {
         const date = subMonths(new Date(), 5 - i);
         const month = format(date, 'MMM');
         // This is a simplified simulation of net worth growth.
         // A real app might pull historical data or calculate it more accurately.
-        const netWorth = savingsGoals.reduce((acc, goal) => acc + goal.currentAmount, 0) * (1 + (i - 5) * 0.05);
+        // Let's simulate a modest growth/fluctuation.
+        const fluctuation = (Math.random() - 0.5) * 0.1; // between -5% and +5%
+        const baseWorth = totalAssets / (1 + (5 - i) * 0.02); // Simulate past lower value
+        const netWorth = baseWorth * (1 + fluctuation);
+
         return { month, netWorth: Math.max(0, netWorth) };
     });
 
@@ -35,22 +39,29 @@ export function NetWorthCard() {
     const { user } = useUser();
     const firestore = useFirestore();
 
+    const userDocRef = useMemoFirebase(() => {
+        if (!user) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore]);
+
     const goalsQuery = useMemoFirebase(() => {
         if (!user) return null;
         return query(collection(firestore, `users/${user.uid}/savingGoals`));
     }, [user, firestore]);
-
-    const { data: savingsGoals, isLoading } = useCollection<SavingsGoal>(goalsQuery);
+    
+    const { data: userData, isLoading: isUserLoading } = useDoc<UserData>(userDocRef);
+    const { data: savingsGoals, isLoading: areGoalsLoading } = useCollection<SavingsGoal>(goalsQuery);
 
     const totalSavings = savingsGoals?.reduce((acc, goal) => acc + goal.currentAmount, 0) ?? 0;
-    const chartData = generateChartData(savingsGoals);
+    const userAssets = userData?.assets ?? 0;
+    const netWorth = totalSavings + userAssets;
+
+    const chartData = generateChartData(netWorth);
     const lastMonthWorth = chartData[chartData.length - 2]?.netWorth ?? 0;
-    const currentWorth = chartData[chartData.length - 1]?.netWorth ?? 0;
+    const currentWorth = netWorth;
     const percentageChange = lastMonthWorth > 0 ? ((currentWorth - lastMonthWorth) / lastMonthWorth) * 100 : 0;
 
-    // This is a simplified net worth calculation. A real app would be more complex.
-    const netWorth = totalSavings + 15000; // Assuming 15k in other assets
-
+    const isLoading = isUserLoading || areGoalsLoading;
 
   return (
     <Card>

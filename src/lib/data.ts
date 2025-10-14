@@ -44,6 +44,7 @@ export type UserData = {
   avatarUrl: string;
   monthlyIncome: number;
   savingGoals: string;
+  assets: number;
 };
 
 export type Alert = {
