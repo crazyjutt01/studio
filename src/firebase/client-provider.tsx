@@ -36,10 +36,14 @@ function DataSeeder() {
     async function checkAndSeed() {
       if (user && firestore) {
         const transactionsCol = collection(firestore, `users/${user.uid}/transactions`);
-        const snapshot = await getDocs(transactionsCol);
-        if (snapshot.empty) {
-          console.log('Seeding database for new user...');
-          seedDatabase(firestore, user.uid);
+        try {
+          const snapshot = await getDocs(transactionsCol);
+          if (snapshot.empty) {
+            console.log('Seeding database for new user...');
+            await seedDatabase(firestore, user.uid);
+          }
+        } catch (error) {
+           console.error("Error checking or seeding database:", error);
         }
       }
     }
