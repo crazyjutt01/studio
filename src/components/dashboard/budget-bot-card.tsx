@@ -12,10 +12,10 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getPersonalizedTips } from '@/ai/flows/budget-bot-personalized-tips';
 import { Loader2, Lightbulb } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import type { Transaction } from '@/lib/data';
-import { user as mockUser, getExpensesForAI } from '@/lib/data';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import type { Transaction, UserData } from '@/lib/data';
+import { getExpensesForAI } from '@/lib/data';
 
 export function BudgetBotCard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,19 +24,25 @@ export function BudgetBotCard() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+
   const transactionsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
 
+  const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
 
   const handleGetTips = async () => {
-    if (!transactionsData) {
+    if (!transactionsData || !userData) {
         toast({
             variant: 'destructive',
-            title: 'No transaction data available',
-            description: 'Cannot generate tips without spending history.',
+            title: 'Not enough data',
+            description: 'Cannot generate tips without transaction history and user profile information.',
         });
         return;
     }
@@ -45,9 +51,9 @@ export function BudgetBotCard() {
     try {
       const expenses = getExpensesForAI(transactionsData);
       const result = await getPersonalizedTips({
-        income: mockUser.monthlyIncome,
+        income: userData.monthlyIncome,
         expenses: expenses,
-        savingGoals: mockUser.savingGoals,
+        savingGoals: userData.savingGoals,
       });
       setTips(result.tips);
     } catch (err) {
@@ -94,7 +100,7 @@ export function BudgetBotCard() {
         )}
       </CardContent>
       <CardFooter>
-        <Button onClick={handleGetTips} disabled={isLoading || !transactionsData} className="w-full">
+        <Button onClick={handleGetTips} disabled={isLoading || !transactionsData || !userData} className="w-full">
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
