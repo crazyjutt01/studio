@@ -6,10 +6,12 @@ import {
   writeBatch,
   type Firestore,
   addDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import type { Transaction, SavingsGoal, User, Budget } from '@/lib/data';
+import type { Transaction, SavingsGoal, UserData, Budget } from '@/lib/data';
+import { addDocumentNonBlocking } from '@/firebase';
 
 // Default data for seeding
 const defaultTransactions: Omit<Transaction, 'id' | 'userId'>[] = [
@@ -32,65 +34,42 @@ const defaultBudgets: Omit<Budget, 'id' | 'userId'>[] = [
 ];
 
 export async function seedDatabase(db: Firestore, userId: string) {
-  const batch = writeBatch(db);
+    try {
+        // Seed user profile
+        const userRef = doc(db, 'users', userId);
+        const userData: UserData = {
+            email: null, // Anonymous users have null email
+            name: 'Demo User',
+            avatarUrl: 'user-avatar-1',
+            monthlyIncome: 5000,
+            savingGoals: 'Save for a new car and a vacation to Japan.',
+        };
+        await setDoc(userRef, userData, { merge: true });
 
-  // Seed user profile
-  const userRef = doc(db, 'users', userId);
-  const userData: Partial<User> = {
-    email: 'demo@example.com', // Using a placeholder for anonymous auth
-    name: 'Demo User',
-    avatarUrl: 'user-avatar-1',
-    monthlyIncome: 5000,
-    savingGoals: 'Save for a new car and a vacation to Japan.',
-  };
-  batch.set(userRef, userData, { merge: true });
+        // Seed transactions
+        const transactionsCol = collection(db, `users/${userId}/transactions`);
+        for (const transaction of defaultTransactions) {
+            await addDocumentNonBlocking(transactionsCol, { ...transaction, userId });
+        }
 
-  // Seed transactions
-  const transactionsCol = collection(db, `users/${userId}/transactions`);
-  defaultTransactions.forEach(transaction => {
-    const newTransactionRef = doc(transactionsCol);
-    batch.set(newTransactionRef, { ...transaction, userId });
-  });
+        // Seed savings goals
+        const savingsCol = collection(db, `users/${userId}/savingGoals`);
+        for (const goal of defaultSavingsGoals) {
+            await addDocumentNonBlocking(savingsCol, { ...goal, userId });
+        }
 
-  // Seed savings goals
-  const savingsCol = collection(db, `users/${userId}/savingGoals`);
-  defaultSavingsGoals.forEach(goal => {
-    const newGoalRef = doc(savingsCol);
-    batch.set(newGoalRef, { ...goal, userId });
-  });
-
-  // Seed budgets
-  const budgetsCol = collection(db, `users/${userId}/budgets`);
-  defaultBudgets.forEach(budget => {
-    const newBudgetRef = doc(budgetsCol);
-    batch.set(newBudgetRef, { ...budget, userId });
-  });
-
-  // Commit the batch
-  try {
-    await batch.commit();
-  } catch(error) {
-    const permissionError = new FirestorePermissionError({
-        path: `users/${userId}`,
-        operation: 'write',
-        requestResourceData: {
-          message: 'This write operation is a batch write to seed the database for a new user.',
-        },
-      });
-      errorEmitter.emit('permission-error', permissionError);
-  }
-}
-
-/** Non-blocking add document */
-export function addDocument(colRef: collection, data: any) {
-  return addDoc(colRef, data).catch(error => {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: colRef.path,
-        operation: 'create',
-        requestResourceData: data,
-      })
-    );
-  });
+        // Seed budgets
+        const budgetsCol = collection(db, `users/${userId}/budgets`);
+        for (const budget of defaultBudgets) {
+            await addDocumentNonBlocking(budgetsCol, { ...budget, userId });
+        }
+    } catch (error) {
+        console.error("Error seeding database:", error);
+        // We can't use the permission error emitter here reliably during the first write.
+        // A console error is sufficient for debugging this initial setup phase.
+        if (error instanceof Error && 'code' in error && error.code === 'permission-denied') {
+             throw new Error("Firestore Security Rules denied the initial database seed. Please check your rules to allow writes to the user's own data path.");
+        }
+        throw error; // Re-throw other errors
+    }
 }

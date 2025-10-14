@@ -7,7 +7,7 @@ export type Transaction = {
   date: string;
   amount: number;
   description: string;
-  category: 'Food' | 'Travel' | 'Shopping' | 'Bills';
+  category?: 'Food' | 'Travel' | 'Shopping' | 'Bills';
 };
 
 export type Budget = {
@@ -39,7 +39,7 @@ export type EmergencyContact = {
 export type UserData = {
   id?: string;
   name: string;
-  email: string;
+  email: string | null;
   avatarUrl: string;
   monthlyIncome: number;
   savingGoals: string;
@@ -58,7 +58,7 @@ export const getWeeklySpendingForAI = (transactions: Transaction[]) => {
         Bills: 0,
     };
     transactions.forEach(transaction => {
-        if (categoryMap[transaction.category]) {
+        if (transaction.category && categoryMap[transaction.category]) {
             categoryMap[transaction.category] += transaction.amount;
         }
     });
@@ -77,7 +77,7 @@ export const getExpensesForAI = (transactions: Transaction[]) => {
     Bills: 0,
   };
   transactions.forEach(transaction => {
-      if (categoryMap[transaction.category]) {
+      if (transaction.category && categoryMap[transaction.category]) {
           categoryMap[transaction.category] += transaction.amount;
       }
   });
@@ -97,5 +97,3 @@ export const categoryIcons: CategoryIcons = {
   Shopping: ShoppingCart,
   Bills: Landmark
 };
-
-    

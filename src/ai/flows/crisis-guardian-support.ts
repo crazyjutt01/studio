@@ -58,11 +58,13 @@ Analyze the following user data:
 - Budgets: {{{budgets}}}
 - Saving Goals: {{{savingGoals}}}
 
-First, determine if there is a financial stress event. If not, provide a reassuring message that things look okay. If there is a stress event, identify it.
+First, determine if there is a financial stress event. A stress event is defined as any single transaction that is significantly larger than the user's average transaction amount, or a pattern of spending that exceeds budgets. If not, provide a reassuring message that things look okay and an empty recovery plan.
+
+If there is a stress event, identify it.
 
 Then, generate your response:
-1.  **Friendly Message:** Write a short, empathetic message that acknowledges the situation. Use emojis where appropriate.
-2.  **Recovery Plan:** Create a clear, step-by-step plan. This could include suggestions like temporarily pausing a savings goal, adjusting a budget, or cutting back on specific spending categories for a short period.
+1.  **Friendly Message:** Write a short, empathetic message that acknowledges the specific situation. Use emojis where appropriate.
+2.  **Recovery Plan:** Create a clear, step-by-step plan with 2-3 actionable steps. This could include suggestions like temporarily pausing a savings goal, adjusting a budget, or cutting back on specific spending categories for a short period.
 `,
 });
 

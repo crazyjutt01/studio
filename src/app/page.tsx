@@ -1,30 +1,59 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { FinSafeLogo } from '@/components/icons';
-import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useUser, initiateAnonymousSignIn, useFirestore, seedDatabase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      router.push('/dashboard');
+    const setupUser = async () => {
+      if (user && firestore) {
+        // Check if the user document exists.
+        const userDocRef = doc(firestore, `users/${user.uid}`);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          // If the document doesn't exist, it's a new user. Seed the database.
+          setIsSeeding(true);
+          try {
+            await seedDatabase(firestore, user.uid);
+          } catch (error) {
+            console.error("Failed to seed database:", error);
+            // Handle seeding failure if necessary, e.g., show an error to the user
+          } finally {
+            setIsSeeding(false);
+          }
+        }
+        // Whether the user is new or returning, if the data is there (or has been seeded), we can redirect.
+        router.push('/dashboard');
+      }
+    };
+
+    if (!isUserLoading) {
+      setupUser();
     }
-  }, [user, router]);
+  }, [user, isUserLoading, firestore, router]);
 
   const handleLogin = () => {
-    initiateAnonymousSignIn(auth);
+    if (auth) {
+        initiateAnonymousSignIn(auth);
+    }
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading || isSeeding || user) {
     return (
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        {isSeeding && <p className="mt-4 text-muted-foreground">Setting up your account...</p>}
       </div>
     );
   }

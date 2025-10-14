@@ -68,9 +68,7 @@
         "id",
         "userId",
         "name",
-        "amount",
-        "startDate",
-        "endDate"
+        "amount"
       ]
     },
     "Transaction": {
@@ -110,8 +108,7 @@
         "userId",
         "date",
         "amount",
-        "description",
-        "categoryId"
+        "description"
       ]
     },
     "Category": {
@@ -176,8 +173,7 @@
         "userId",
         "name",
         "targetAmount",
-        "currentAmount",
-        "deadline"
+        "currentAmount"
       ]
     },
     "Alert": {
