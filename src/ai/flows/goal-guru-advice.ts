@@ -15,14 +15,9 @@ const GoalAdviceInputSchema = z.object({
   userId: z.string().describe('The user ID.'),
   income: z.number().describe('Monthly income of the user.'),
   expenses: z
-    .array(
-      z.object({
-        category: z.string().describe('Category of the expense (e.g., food, travel).'),
-        amount: z.number().describe('Amount spent in the category.'),
-      })
-    )
-    .describe('List of expenses with category and amount.'),
-  savingGoals: z.string().describe('A JSON string of the user\'s current saving goals.'),
+    .string()
+    .describe('A JSON string representing a list of expenses with category and amount.'),
+  savingGoals: z.string().describe("A JSON string of the user's current saving goals."),
 });
 export type GoalAdviceInput = z.infer<typeof GoalAdviceInputSchema>;
 
@@ -46,10 +41,7 @@ const prompt = ai.definePrompt({
 Based on the user's income, expenses, and existing savings goals, provide actionable, goal-oriented advice.
 
 Income: {{{income}}}
-Expenses:
-{{#each expenses}}
-- Category: {{{category}}}, Amount: {{{amount}}}
-{{/each}}
+Expenses: {{{expenses}}}
 Saving Goals: {{{savingGoals}}}
 
 Provide specific tips on how to cut spending or allocate funds more effectively to accelerate their progress towards their goals. Keep the tips concise and encouraging.

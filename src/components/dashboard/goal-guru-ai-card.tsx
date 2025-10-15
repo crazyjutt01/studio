@@ -15,7 +15,25 @@ import { Loader2, Zap } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import type { Transaction, UserData, SavingsGoal } from '@/lib/data';
-import { getExpensesForAI } from '@/lib/data';
+
+const getExpensesForAI = (transactions: Transaction[]) => {
+  const categoryMap: { [key: string]: number } = {
+    Food: 0,
+    Travel: 0,
+    Shopping: 0,
+    Bills: 0,
+  };
+  transactions.forEach(transaction => {
+      if (transaction.category && Object.prototype.hasOwnProperty.call(categoryMap, transaction.category)) {
+          categoryMap[transaction.category] += transaction.amount;
+      }
+  });
+  return Object.entries(categoryMap).map(([name, total]) => ({
+      category: name,
+      amount: parseFloat(total.toFixed(2)),
+  }));
+}
+
 
 export function GoalGuruAICard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +77,7 @@ export function GoalGuruAICard() {
       const result = await getGoalAdvice({
         userId: user.uid,
         income: userData.monthlyIncome,
-        expenses: expenses,
+        expenses: JSON.stringify(expenses),
         savingGoals: JSON.stringify(savingsGoalsData),
       });
       setTips(result.tips);
