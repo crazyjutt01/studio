@@ -88,6 +88,7 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
       const updatedTransactions = [...transactionsData, { ...newTransaction, id: 'temp' }];
 
       const alertSuggestions = await generateAlerts({
+        userId: user.uid,
         transactions: JSON.stringify(updatedTransactions),
         budgets: JSON.stringify(budgetsData),
         goals: JSON.stringify(savingsGoalsData),
