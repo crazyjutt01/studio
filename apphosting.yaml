@@ -1,14 +1,10 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
-
+# Settings for Backend (on Cloud Run).
+# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
-build:
-  # Specifies the command to run to build your app.
-  # This is the standard command for Next.js apps.
-  command: npm run build
+  minInstances: 0
+
+# Environment variables and secrets.
+# See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
 env:
-  - variable: GENKIT_ENV
-    value: prod
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
