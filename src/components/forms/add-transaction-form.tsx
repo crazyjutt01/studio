@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, addDocumentNonBlocking, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where, Timestamp, getDocs, limit } from 'firebase/firestore';
+import { collection, doc, query, where, Timestamp, getDocs, limit, orderBy } from 'firebase/firestore';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import type { Transaction, UserData, Budget, SavingsGoal, Alert } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -107,13 +107,12 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
            const recentAlertsQuery = query(
              alertsCol,
              where('trigger', '==', suggestion.trigger),
-             where('timestamp', '>', sevenDaysAgo.toISOString()),
              limit(1)
            );
            
            const recentAlertsSnapshot = await getDocs(recentAlertsQuery);
 
-           if(recentAlertsSnapshot.empty) {
+           if(recentAlertsSnapshot.empty || new Date(recentAlertsSnapshot.docs[0].data().timestamp) < sevenDaysAgo) {
                 const alertData: Omit<Alert, 'id'> = {
                     userId: user.uid,
                     type: suggestion.type!,

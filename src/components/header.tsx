@@ -44,7 +44,7 @@ export function Header() {
 
   const alertsQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, `users/${user.uid}/alerts`), orderBy('timestamp', 'desc'));
+    return query(collection(firestore, `users/${user.uid}/alerts`));
   }, [user, firestore]);
 
   const { data: alerts } = useCollection<Alert>(alertsQuery);
@@ -88,6 +88,8 @@ export function Header() {
   }
 
   const unreadAlertsCount = alerts?.filter(a => !a.isRead).length ?? 0;
+  const sortedAlerts = alerts ? [...alerts].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) : [];
+
 
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
 
@@ -124,8 +126,8 @@ export function Header() {
         <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {alerts && alerts.length > 0 ? (
-                alerts.slice(0, 5).map(alert => (
+            {sortedAlerts && sortedAlerts.length > 0 ? (
+                sortedAlerts.slice(0, 5).map(alert => (
                     <DropdownMenuItem key={alert.id} onSelect={(e) => { e.preventDefault(); handleMarkAsRead(alert.id); }} className={`flex-col items-start gap-1 ${!alert.isRead ? 'bg-secondary/50' : ''}`}>
                         <p className="font-medium">{alert.type}</p>
                         <p className="text-xs text-muted-foreground whitespace-normal">{alert.message}</p>

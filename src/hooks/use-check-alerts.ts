@@ -60,13 +60,12 @@ export function useCheckAlerts() {
                 const recentAlertsQuery = query(
                     alertsCol,
                     where('trigger', '==', suggestion.trigger),
-                    where('timestamp', '>', sevenDaysAgo.toISOString()),
                     limit(1)
                 );
 
                 const recentAlertsSnapshot = await getDocs(recentAlertsQuery);
-
-                if (recentAlertsSnapshot.empty) {
+                
+                if (recentAlertsSnapshot.empty || new Date(recentAlertsSnapshot.docs[0].data().timestamp) < sevenDaysAgo) {
                     const alertData: Omit<Alert, 'id'> = {
                         userId: user.uid,
                         type: suggestion.type!,
