@@ -11,6 +11,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const RecordExpenseInputSchema = z.object({
+  userId: z.string().describe('The user ID.'),
   receiptDataUri: z
     .string()
     .describe(

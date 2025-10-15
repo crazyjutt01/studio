@@ -48,11 +48,12 @@ export default function CrisisGuardianPage() {
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const handleGetSupport = async () => {
-    if (!transactionsData || !budgetsData || !savingsGoalsData) return;
+    if (!user || !transactionsData || !budgetsData || !savingsGoalsData) return;
     setIsAiLoading(true);
     setAiSupport(null);
     try {
       const result = await getCrisisSupport({
+          userId: user.uid,
           transactions: JSON.stringify(transactionsData),
           budgets: JSON.stringify(budgetsData),
           savingGoals: JSON.stringify(savingsGoalsData),

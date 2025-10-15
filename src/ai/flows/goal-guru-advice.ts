@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GoalAdviceInputSchema = z.object({
+  userId: z.string().describe('The user ID.'),
   income: z.number().describe('Monthly income of the user.'),
   expenses: z
     .array(

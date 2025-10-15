@@ -50,7 +50,7 @@ export function AdvisorAICard({ isPage, isChat }: { isPage?: boolean, isChat?: b
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || !transactionsData || !budgetsData || !savingsGoalsData) return;
+    if (!input.trim() || !user || !transactionsData || !budgetsData || !savingsGoalsData) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -59,6 +59,7 @@ export function AdvisorAICard({ isPage, isChat }: { isPage?: boolean, isChat?: b
 
     try {
       const result = await advisorAIWeeklySummary({
+        userId: user.uid,
         transactions: JSON.stringify(transactionsData),
         budgets: JSON.stringify(budgetsData),
         savingGoals: JSON.stringify(savingsGoalsData),

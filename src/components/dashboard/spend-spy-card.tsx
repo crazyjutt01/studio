@@ -31,7 +31,7 @@ export function SpendSpyCard() {
   const firestore = useFirestore();
 
   const handleFileChange = (file: File) => {
-    if (!file) return;
+    if (!file || !user) return;
 
     if (!file.type.startsWith('image/')) {
         setError('Please upload an image file.');
@@ -47,7 +47,7 @@ export function SpendSpyCard() {
       setResult(null);
 
       try {
-        const output = await recordExpense({ receiptDataUri: dataUri });
+        const output = await recordExpense({ userId: user.uid, receiptDataUri: dataUri });
         setResult(output);
         if (user && firestore) {
             const transactionData: Omit<Transaction, 'id'> = {

@@ -44,7 +44,7 @@ export function GoalGuruAICard() {
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const handleGetTips = async () => {
-    if (!transactionsData || !userData || !savingsGoalsData) {
+    if (!user || !transactionsData || !userData || !savingsGoalsData) {
         toast({
             variant: 'destructive',
             title: 'Not enough data',
@@ -57,6 +57,7 @@ export function GoalGuruAICard() {
     try {
       const expenses = getExpensesForAI(transactionsData);
       const result = await getGoalAdvice({
+        userId: user.uid,
         income: userData.monthlyIncome,
         expenses: expenses,
         savingGoals: JSON.stringify(savingsGoalsData),

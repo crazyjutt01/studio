@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const CrisisSupportInputSchema = z.object({
+  userId: z.string().describe('The user ID.'),
   transactions: z
     .string()
     .describe("A JSON string of the user's recent transactions."),
