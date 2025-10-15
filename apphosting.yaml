@@ -5,3 +5,10 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+build:
+  # Specifies the command to run to build your app.
+  # This is the standard command for Next.js apps.
+  command: npm run build
+env:
+  - variable: GENKIT_ENV
+    value: prod
