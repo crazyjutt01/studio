@@ -14,7 +14,41 @@ FinSafe is a modern, responsive web application built with Next.js that leverage
 
 ---
 
-## Deployment Guide
+## Vercel Deployment Guide
+
+Deploying your FinSafe application to Vercel is a straightforward process. Follow these steps to get your app live with fully functional AI agents.
+
+### Step 1: Get a Gemini API Key
+
+1.  Go to [Google AI Studio](https://aistudio.google.com/).
+2.  Click on **"Get API key"** and then **"Create API key in new project"**.
+3.  Copy the generated API key. You will need it in the next step.
+
+### Step 2: Push Your Project to a Git Repository
+
+Vercel deploys directly from a Git repository (like GitHub, GitLab, or Bitbucket).
+
+1.  Create a new repository on your preferred Git provider.
+2.  Follow the provider's instructions to push your local FinSafe project code to the new repository.
+
+### Step 3: Deploy on Vercel
+
+1.  **Sign up or log in** to [Vercel](https://vercel.com/) using your Git provider account.
+2.  From your Vercel dashboard, click **"Add New..."** and select **"Project"**.
+3.  **Import the Git repository** you just created. Vercel will automatically detect that it's a Next.js project and configure the build settings for you.
+4.  **Configure Environment Variables**: This is the most important step for the AI agents.
+    -   Expand the **"Environment Variables"** section.
+    -   Add a new variable:
+        -   **Name**: `GEMINI_API_KEY`
+        -   **Value**: Paste the Gemini API key you copied from AI Studio.
+    -   Ensure the variable is available for all environments (Production, Preview, and Development).
+5.  Click **"Deploy"**.
+
+Vercel will now build and deploy your application. Once finished, you can visit the provided URL to see your live FinSafe application with fully operational AI features.
+
+---
+
+## Firebase App Hosting Deployment Guide
 
 To deploy your FinSafe application to Firebase App Hosting and ensure all AI features function correctly, you need to securely provide your Gemini API Key to the production environment.
 
@@ -41,6 +75,10 @@ The `apphosting.yaml` file tells Firebase how to build and configure your applic
 Your `apphosting.yaml` should already be configured to use the Gemini API Key from Secret Manager. It should look like this:
 
 ```yaml
+build:
+  run:
+    - npm install
+    - npm run build
 runConfig:
   minInstances: 0
 env:
@@ -50,7 +88,7 @@ env:
 
 **Note on Environment Variables:**
 - **For secrets** (like API keys), use the `secret` property as shown above. This securely references the value from Secret Manager.
-- **For non-sensitive variables**, you can use the `value` property directly, as you suggested:
+- **For non-sensitive variables**, you can use the `value` property directly:
   ```yaml
   env:
     - variable: MY_PUBLIC_VARIABLE
