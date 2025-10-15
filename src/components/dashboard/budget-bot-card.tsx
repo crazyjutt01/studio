@@ -43,7 +43,7 @@ export function BudgetBotCard() {
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const handleGetBudget = async () => {
-    if (!transactionsData || !userData || !savingsGoalsData) {
+    if (!user || !transactionsData || !userData || !savingsGoalsData) {
         toast({
             variant: 'destructive',
             title: 'Not enough data',
@@ -55,6 +55,7 @@ export function BudgetBotCard() {
     setBudgetResponse(null);
     try {
       const result = await getPersonalizedBudget({
+        userId: user.uid,
         income: userData.monthlyIncome,
         assets: userData.assets || 0,
         transactions: JSON.stringify(transactionsData),

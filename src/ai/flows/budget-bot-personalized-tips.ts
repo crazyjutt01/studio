@@ -12,6 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PersonalizedBudgetInputSchema = z.object({
+  userId: z.string().describe('The user ID.'),
   income: z.number().describe('Monthly income of the user.'),
   assets: z.number().describe('Total assets of the user.'),
   transactions: z.string().describe('JSON string of recent transactions.'),
