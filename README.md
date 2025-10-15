@@ -18,8 +18,6 @@ FinSafe is a modern, responsive web application built with Next.js that leverage
 
 To deploy your FinSafe application to Firebase App Hosting and ensure all AI features function correctly, you need to securely provide your Gemini API Key to the production environment.
 
-Follow these steps:
-
 ### Step 1: Get a Gemini API Key
 
 1.  Go to [Google AI Studio](https://aistudio.google.com/).
@@ -28,36 +26,61 @@ Follow these steps:
 
 ### Step 2: Store the API Key in Google Cloud Secret Manager
 
+This is the most secure way to handle sensitive keys.
+
 1.  Go to the [Google Cloud Secret Manager page](https://console.cloud.google.com/security/secret-manager) for your Firebase project.
 2.  Click **"Create secret"**.
 3.  For the **Name**, enter `GEMINI_API_KEY`.
 4.  In the **Secret value** field, paste the Gemini API key you copied from AI Studio.
 5.  Click **"Create secret"**.
 
-### Step 3: Grant App Hosting Access to the Secret
+### Step 3: Configure `apphosting.yaml`
 
-You need to tell Firebase App Hosting that your application requires access to the secret you just created.
+The `apphosting.yaml` file tells Firebase how to build and configure your application.
 
-1.  Open the `apphosting.yaml` file in your project.
-2.  Add the `env` section to expose the `GEMINI_API_KEY` secret to your application at runtime. The file should look like this:
+Your `apphosting.yaml` should already be configured to use the Gemini API Key from Secret Manager. It should look like this:
 
-    ```yaml
-    runConfig:
-      minInstances: 0
-    env:
-      - variable: GEMINI_API_KEY
-        secret: GEMINI_API_KEY
+```yaml
+runConfig:
+  minInstances: 0
+env:
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+```
+
+**Note on Environment Variables:**
+- **For secrets** (like API keys), use the `secret` property as shown above. This securely references the value from Secret Manager.
+- **For non-sensitive variables**, you can use the `value` property directly, as you suggested:
+  ```yaml
+  env:
+    - variable: MY_PUBLIC_VARIABLE
+      value: "this-is-a-public-value"
+  ```
+
+### Step 4: Grant App Hosting Access to the Secret
+
+You need to give the App Hosting service account permission to access the secret.
+
+1.  Find your service account email in the [App Hosting dashboard](https://console.firebase.google.com/project/_/hosting/backends) in Firebase. It will look something like `app-hosting-backend-id@project-id.iam.gserviceaccount.com`.
+2.  Go back to the [Secret Manager page](https://console.cloud.google.com/security/secret-manager), select your `GEMINI_API_KEY` secret.
+3.  In the permissions panel on the right, click **"Add principal"**.
+4.  Paste your service account email into the **"New principals"** field.
+5.  For the role, select **"Secret Manager Secret Accessor"**.
+6.  Click **"Save"**.
+
+### Step 5: Deploy with the Firebase CLI
+
+Once the steps above are complete, you can deploy the application using the Firebase Command Line Interface.
+
+1.  **Install the Firebase CLI**: If you haven't already, install it by running `npm install -g firebase-tools`.
+2.  **Login to Firebase**: Run `firebase login`.
+3.  **Initialize Firebase in your project**: Run `firebase init`. When prompted, select "App Hosting" and follow the default setup instructions.
+4.  **Deploy**: Run the following command from your project's root directory:
+    ```bash
+    firebase deploy --only apphosting
     ```
 
-3.  Finally, you need to give the App Hosting service account permission to access the secret.
-    *   Find your service account email in the App Hosting dashboard in Firebase. It will look something like `app-hosting-backend-id@project-id.iam.gserviceaccount.com`.
-    *   Go back to the [Secret Manager page](https://console.cloud.google.com/security/secret-manager), select your `GEMINI_API_KEY` secret.
-    *   In the permissions panel on the right, click **"Add principal"**.
-    *   Paste your service account email into the **"New principals"** field.
-    *   For the role, select **"Secret Manager Secret Accessor"**.
-    *   Click **"Save"**.
-
-After completing these steps, you can deploy your application from Firebase Studio, and the AI agents will be fully functional.
+After the deployment is complete, your FinSafe application will be live, and the AI agents will be fully functional.
 
 ---
 
