@@ -8,6 +8,7 @@ import type { UserData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, Coins, Flame } from 'lucide-react';
 import { AchievementsCard } from '@/components/dashboard/achievements-card';
+import { ChallengesCard } from '@/components/dashboard/challenges-card';
 import { cn } from '@/lib/utils';
 
 export default function GamificationPage() {
@@ -37,6 +38,9 @@ export default function GamificationPage() {
           <h1 className="text-lg font-semibold md:text-2xl">Your Progress</h1>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-3">
+              <ChallengesCard />
+            </div>
             <Card className="lg:col-span-1">
                 <CardHeader>
                     <CardTitle>Your Level</CardTitle>

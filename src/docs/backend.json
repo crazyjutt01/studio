@@ -396,20 +396,17 @@
       "description": "Represents a personalized financial challenge.",
       "type": "object",
       "properties": {
-        "title": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "xp": {
-          "type": "number"
-        },
-        "coins": {
-          "type": "number"
-        }
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "xp": { "type": "number" },
+        "coins": { "type": "number" },
+        "type": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "isCompleted": { "type": "boolean" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "tip": { "type": "string" }
       },
-      "required": ["title", "description", "xp", "coins"]
+      "required": ["id", "title", "description", "xp", "coins", "type", "isCompleted", "expiresAt", "tip"]
     }
   },
   "auth": {
@@ -551,6 +548,26 @@
             {
               "name": "contactId",
               "description": "The unique identifier for the emergency contact."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/challenges/{challengeId}",
+        "definition": {
+          "entityName": "Challenge",
+          "schema": {
+            "$ref": "#/backend/entities/Challenge"
+          },
+          "description": "Stores gamification challenges for a specific user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "challengeId",
+              "description": "The unique identifier for the challenge."
             }
           ]
         }

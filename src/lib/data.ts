@@ -1,6 +1,8 @@
 'use client';
 import type { LucideIcon } from 'lucide-react';
 import { Landmark, MoreHorizontal, Plane, ShoppingCart, UtensilsCrossed, Trophy, Star, Shield, Gem, Crown, Rocket } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
+
 
 export type Transaction = {
   id: string;
@@ -73,6 +75,18 @@ export type CategoryData = {
   name: string;
   total: number;
 };
+
+export type Challenge = {
+    id: string;
+    title: string;
+    description: string;
+    xp: number;
+    coins: number;
+    type: 'daily' | 'weekly' | 'monthly';
+    isCompleted: boolean;
+    expiresAt: Timestamp;
+    tip: string;
+  };
 
 export type BadgeInfo = {
     id: string;
@@ -165,5 +179,3 @@ export const currencies: { [key: string]: { symbol: string, name: string } } = {
     AUD: { symbol: '$', name: 'Australian Dollar' },
     PKR: { symbol: '₨', name: 'Pakistani Rupee' },
 };
-
-    

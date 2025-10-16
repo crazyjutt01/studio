@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Header } from '@/components/header';
 import { OverviewCard } from '@/components/dashboard/overview-card';
 import { RecentTransactionsCard } from '@/components/dashboard/recent-transactions-card';
@@ -14,7 +15,9 @@ import { Progress } from '@/components/ui/progress';
 import { LevelUp } from '@/components/level-up';
 import { useGamification } from '@/hooks/use-gamification';
 import { FinancialSummaryAgentCard } from '@/components/dashboard/financial-summary-agent-card';
-import { ChallengesCard } from '@/components/dashboard/challenges-card';
+import { Button } from '@/components/ui/button';
+import { Award } from 'lucide-react';
+
 
 const getCategoryData = (transactions: Transaction[] | null): CategoryData[] | null => {
   if (!transactions) return null;
@@ -97,7 +100,20 @@ export default function DashboardPage() {
           </div>
           <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <FinancialSummaryAgentCard />
-            <ChallengesCard />
+             <div className="flex items-center justify-center rounded-lg border border-dashed shadow-sm p-8 flex-col gap-4">
+                <div className="flex flex-col items-center text-center gap-2">
+                    <Award className="w-12 h-12 text-primary" />
+                    <h3 className="text-2xl font-bold tracking-tight">
+                        Ready for a Challenge?
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        Head over to the gamification section to view your daily, weekly, and monthly challenges!
+                    </p>
+                </div>
+                <Button asChild>
+                    <Link href="/gamification">View Challenges</Link>
+                </Button>
+            </div>
           </div>
         </div>
         {showLevelUp && levelUpInfo && (
