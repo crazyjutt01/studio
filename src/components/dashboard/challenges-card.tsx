@@ -3,14 +3,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { createChallenges } from '@/ai/flows/challenge-creator';
 import { getChallengeTip } from '@/ai/flows/get-challenge-tip';
-import { Loader2, Dices, Award, HelpCircle, Check, Sparkles, X } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { Loader2, Award, HelpCircle, Check, Sparkles } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, doc, where, getDocs, Timestamp, writeBatch } from 'firebase/firestore';
-import type { UserData, SavingsGoal, Challenge, Transaction, Budget } from '@/lib/data';
+import type { UserData, Challenge, Transaction, Budget } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
-import { endOfDay, endOfWeek, endOfMonth, isAfter, startOfDay } from 'date-fns';
+import { endOfDay, startOfDay } from 'date-fns';
 import { useGamification } from '@/hooks/use-gamification';
 import {
     Dialog,
@@ -21,24 +20,24 @@ import {
     DialogFooter
 } from '@/components/ui/dialog';
 
-const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionType' | 'actionValue'>[] = [
+const defaultDailyChallenges: Omit<Challenge, 'id' | 'userId' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionType' | 'actionValue'>[] = [
     {
-        title: 'Track Your Spending',
-        description: 'Record at least one transaction today.',
+        title: 'Log a Transaction',
+        description: 'Manually add one transaction or upload a receipt via SpendSpy.',
         xp: 15,
         coins: 15,
-        tip: 'Use SpendSpy to upload a receipt for a quick and easy way to track expenses!',
+        tip: 'Use SpendSpy for a quick way to track expenses. Just upload a receipt!',
     },
     {
-        title: 'Check Your Budgets',
-        description: 'Visit the BudgetBot page to see your spending limits.',
+        title: 'Review Your Budget',
+        description: 'Visit the BudgetBot page to check on your spending limits.',
         xp: 10,
         coins: 10,
         tip: 'Knowing your budget is the first step to staying on track!',
     },
     {
-        title: 'Review Your Goals',
-        description: 'Look at your savings goals on the GoalGuru page.',
+        title: 'Check Your Goals',
+        description: 'Visit the GoalGuru page to review your savings progress.',
         xp: 10,
         coins: 10,
         tip: 'Keeping your goals in mind helps you stay motivated.',
@@ -48,7 +47,14 @@ const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted'
         description: 'Ask AdvisorAI a question about your finances.',
         xp: 20,
         coins: 20,
-        tip: 'AdvisorAI can give you an instant summary of your spending. Try asking "How much did I spend this week?".',
+        tip: 'Try asking "How much did I spend this week?" for an instant summary.',
+    },
+    {
+        title: 'No-Spend Challenge',
+        description: 'Try not to spend any money on non-essential items today.',
+        xp: 50,
+        coins: 50,
+        tip: 'Unsubscribe from marketing emails to reduce temptation!',
     },
 ];
 
@@ -67,11 +73,6 @@ export function ChallengesCard() {
     return doc(firestore, `users/${user.uid}`);
   }, [user, firestore]);
   
-  const savingsGoalsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, `users/${user.uid}/savingGoals`));
-  }, [user, firestore]);
-
   const challengesQuery = useMemoFirebase(() => {
     if(!user || !firestore) return null;
     const now = Timestamp.now();
@@ -86,89 +87,50 @@ export function ChallengesCard() {
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
 
-  const budgetsQuery = useMemoFirebase(() => {
-    if(!user || !firestore) return null;
-    return query(collection(firestore, `users/${user.uid}/budgets`));
-  }, [user, firestore]);
-
   const { data: userData } = useDoc<UserData>(userDocRef);
-  const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
-  const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
   const { data: allChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
 
   const fetchAndSetChallenges = useCallback(async () => {
-    if (!user || !userData || !firestore || areChallengesLoading) {
+    if (!user || !userData || !firestore) {
       return;
     }
 
     setIsLoading(true);
     
-    const now = new Date();
-    const hasDaily = allChallenges?.some(c => c.type === 'daily' && isAfter(c.expiresAt.toDate(), startOfDay(now))) ?? false;
-    const hasWeekly = allChallenges?.some(c => c.type === 'weekly') ?? false;
-    const hasMonthly = allChallenges?.some(c => c.type === 'monthly') ?? false;
-
-    if (hasDaily && hasWeekly && hasMonthly) {
-      setIsLoading(false);
-      return;
-    }
-    
     const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
-    const batch = writeBatch(firestore);
-    let challengesCreated = false;
+    const today = startOfDay(new Date());
 
-    if (!hasDaily) {
+    const q = query(
+        challengesCol,
+        where('type', '==', 'daily'),
+        where('expiresAt', '>=', Timestamp.fromDate(today))
+    );
+
+    const dailySnapshot = await getDocs(q);
+
+    if (dailySnapshot.empty) {
+        const batch = writeBatch(firestore);
         defaultDailyChallenges.forEach(challengeDef => {
             const newChallengeRef = doc(challengesCol);
             const dailyChallenge: Omit<Challenge, 'id'> = {
                 ...challengeDef,
+                userId: user.uid,
                 type: 'daily',
                 status: 'active',
-                expiresAt: Timestamp.fromDate(endOfDay(now)),
+                expiresAt: Timestamp.fromDate(endOfDay(today)),
                 actionType: 'none',
                 isCompleted: false,
                 actionValue: 0
             };
             batch.set(newChallengeRef, dailyChallenge);
         });
-        challengesCreated = true;
-    }
-
-    if (!hasWeekly || !hasMonthly) {
-        try {
-            const result = await createChallenges({
-                userId: user.uid,
-                level: userData.level || 1,
-                savingGoals: JSON.stringify(savingsGoalsData),
-                region: userData.region || 'US',
-                currency: userData.currency || 'USD',
-            });
-            
-            if (result.weekly && !hasWeekly) {
-                const newChallengeRef = doc(challengesCol);
-                const weeklyChallenge: Omit<Challenge, 'id'> = { ...result.weekly, type: 'weekly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
-                batch.set(newChallengeRef, weeklyChallenge);
-                challengesCreated = true;
-            }
-            if (result.monthly && !hasMonthly) {
-                const newChallengeRef = doc(challengesCol);
-                const monthlyChallenge: Omit<Challenge, 'id'> = { ...result.monthly, type: 'monthly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
-                batch.set(newChallengeRef, monthlyChallenge);
-                challengesCreated = true;
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    }
-    
-    if (challengesCreated) {
         await batch.commit();
     }
-
+    
     setIsLoading(false);
 
-  }, [user, firestore, userData, areChallengesLoading, allChallenges, savingsGoalsData]);
+  }, [user, firestore, userData]);
 
 
   useEffect(() => {
@@ -183,18 +145,16 @@ export function ChallengesCard() {
     const batch = writeBatch(firestore);
     let dirty = false;
 
-    allChallenges.forEach(challenge => {
-        if(challenge.status !== 'active') return;
+    for (const challenge of allChallenges) {
+        if(challenge.status !== 'active') continue;
 
         let isEligible = false;
-        if(challenge.actionType === 'transaction') {
-            const hasMatchingTransaction = transactionsData?.some(t => {
-                const challengeDate = challenge.expiresAt.toDate();
-                const transactionDate = new Date(t.date);
-                const isRecent = transactionDate <= challengeDate;
-                return isRecent && t.amount >= (challenge.actionValue || 0);
-            });
-            if(hasMatchingTransaction) isEligible = true;
+        
+        // Simple check based on title for manual challenges
+        const todayStart = startOfDay(new Date());
+        if (challenge.title === 'Log a Transaction' && transactionsData) {
+            const hasTodayTransaction = transactionsData.some(t => new Date(t.date) >= todayStart);
+            if (hasTodayTransaction) isEligible = true;
         }
 
         if(isEligible) {
@@ -202,7 +162,7 @@ export function ChallengesCard() {
             batch.update(challengeRef, { status: 'eligible' });
             dirty = true;
         }
-    });
+    }
 
     if(dirty) {
         await batch.commit();
@@ -250,7 +210,7 @@ export function ChallengesCard() {
             Your Challenges
           </CardTitle>
           <CardDescription>
-            Complete challenges to earn XP and coins. New challenges generate automatically.
+            Complete challenges to earn XP and coins. New challenges appear daily.
           </CardDescription>
         </div>
       </CardHeader>
@@ -264,10 +224,7 @@ export function ChallengesCard() {
         )}
         {!isLoading && !areChallengesLoading && sortedChallenges.length === 0 && (
           <div className="text-center text-muted-foreground pt-12">
-            <p>No active challenges right now. Come back later for new ones!</p>
-            {(!savingsGoalsData || savingsGoalsData.length === 0) && (
-                <p className="text-sm mt-2">Add a savings goal to unlock weekly and monthly challenges!</p>
-            )}
+            <p>No active challenges right now. Come back tomorrow for new ones!</p>
           </div>
         )}
         {!isLoading && !areChallengesLoading && (
@@ -341,3 +298,5 @@ export function ChallengesCard() {
     </>
   );
 }
+
+    
