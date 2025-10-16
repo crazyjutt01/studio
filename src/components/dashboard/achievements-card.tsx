@@ -5,7 +5,6 @@ import { doc } from 'firebase/firestore';
 import type { UserData, BadgeInfo } from '@/lib/data';
 import { badges } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
-import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
@@ -32,13 +31,13 @@ export function AchievementsCard() {
       <CardContent>
         {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {Array.from({ length: 5 }).map((_, i) => (
+                {Array.from({ length: badges.length }).map((_, i) => (
                     <Skeleton key={i} className="h-24 w-full" />
                 ))}
             </div>
         ) : (
         <TooltipProvider>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {badges.map((badge: BadgeInfo) => {
               const hasBadge = userData?.badges?.includes(badge.id);
               const Icon = badge.icon;
@@ -47,7 +46,7 @@ export function AchievementsCard() {
                   <TooltipTrigger asChild>
                     <div
                       className={cn(
-                        "flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center transition-all",
+                        "flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center transition-all aspect-square",
                         hasBadge ? "border-primary bg-primary/10" : "bg-muted opacity-50"
                       )}
                     >
@@ -56,8 +55,8 @@ export function AchievementsCard() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
+                    <p className="font-semibold">{badge.name}</p>
                     <p>{badge.description}</p>
-                    {!hasBadge && <p className="text-xs text-muted-foreground">Requires {badge.xpThreshold} XP</p>}
                   </TooltipContent>
                 </Tooltip>
               );

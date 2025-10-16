@@ -1,6 +1,6 @@
 'use client';
 import type { LucideIcon } from 'lucide-react';
-import { Landmark, MoreHorizontal, Plane, ShoppingCart, UtensilsCrossed, Trophy } from 'lucide-react';
+import { Landmark, MoreHorizontal, Plane, ShoppingCart, UtensilsCrossed, Trophy, Star, Shield, Gem, Crown, Rocket } from 'lucide-react';
 
 export type Transaction = {
   id: string;
@@ -79,14 +79,19 @@ export type BadgeInfo = {
     name: string;
     description: string;
     icon: LucideIcon;
-    xpThreshold: number;
+    xpThreshold?: number;
+    type?: 'level' | 'transactions' | 'savings_goal_amount';
+    value?: number;
   };
   
   export const badges: BadgeInfo[] = [
-    { id: 'first-transaction', name: 'First Step', description: 'Added your first transaction.', icon: Trophy, xpThreshold: 10 },
-    { id: 'first-budget', name: 'Budget Beginner', description: 'Created your first budget.', icon: Trophy, xpThreshold: 25 },
-    { id: 'first-goal', name: 'Goal Setter', description: 'Set your first savings goal.', icon: Trophy, xpThreshold: 50 },
-    { id: 'level-5', name: 'Level 5', description: 'Reached level 5.', icon: Trophy, xpThreshold: 500 },
+    { id: 'first-transaction', name: 'First Step', description: 'Added your first transaction.', icon: Star, xpThreshold: 10 },
+    { id: 'first-budget', name: 'Budget Beginner', description: 'Created your first budget.', icon: Shield, xpThreshold: 25 },
+    { id: 'first-goal', name: 'Goal Setter', description: 'Set your first savings goal.', icon: Rocket, xpThreshold: 50 },
+    { id: 'level-5', name: 'Level 5', description: 'Reached level 5.', icon: Trophy, type: 'level', value: 5 },
+    { id: 'level-10', name: 'Level 10', description: 'Reached level 10.', icon: Gem, type: 'level', value: 10 },
+    { id: 'transaction-master', name: 'Transaction Master', description: 'Logged 50 transactions.', icon: Crown, type: 'transactions', value: 50 },
+    { id: 'big-saver', name: 'Big Saver', description: 'Reached a savings goal of over 10,000.', icon: Landmark, type: 'savings_goal_amount', value: 10000 },
   ];
 
 export const getWeeklySpendingForAI = (transactions: Transaction[]) => {
