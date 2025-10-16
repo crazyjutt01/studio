@@ -151,14 +151,14 @@ export function ChallengesCard() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, firestore, userData, existingChallenges, savingsGoalsData]);
+  }, [user, firestore, userData, existingChallenges, savingsGoalsData, toast]);
 
 
   useEffect(() => {
     if(!areChallengesLoading && userData) {
         fetchAndSetChallenges();
     }
-  }, [areChallengesLoading, userData, savingsGoalsData, fetchAndSetChallenges]);
+  }, [areChallengesLoading, userData, fetchAndSetChallenges]);
 
   const handleCompleteChallenge = (challenge: Challenge) => {
     if (!user || !firestore || !challenge.id || challenge.id.startsWith('temp-')) return;
