@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +10,7 @@ import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, addDocum
 import { collection, query, doc, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { UserData, SavingsGoal, Challenge } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
-import { add, endOfDay, endOfWeek, endOfMonth, isBefore } from 'date-fns';
+import { add, endOfDay, endOfWeek, endOfMonth, isBefore, startOfDay } from 'date-fns';
 import { useGamification } from '@/hooks/use-gamification';
 import {
     Dialog,
@@ -20,6 +20,30 @@ import {
     DialogDescription,
     DialogFooter
 } from '@/components/ui/dialog';
+
+const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type'>[] = [
+    {
+      title: 'Log a Transaction',
+      description: 'Record any expense or income today.',
+      xp: 10,
+      coins: 10,
+      tip: 'You can add a transaction manually or upload a receipt in SpendSpy!',
+    },
+    {
+      title: 'Review Your Budget',
+      description: 'Check in on your monthly budget to see your progress.',
+      xp: 5,
+      coins: 5,
+      tip: 'Visit the BudgetBot page to see how you are tracking against your limits.',
+    },
+    {
+      title: 'Set a Goal',
+      description: 'Create a new savings goal for something you want.',
+      xp: 25,
+      coins: 25,
+      tip: 'Big or small, every goal is a step in the right direction! Visit GoalGuru to add one.'
+    }
+];
 
 export function ChallengesCard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -56,20 +80,35 @@ export function ChallengesCard() {
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
   const { data: existingChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
 
-  const fetchAndSetChallenges = async () => {
-    if (!user || !userData) {
+  const fetchAndSetChallenges = useCallback(async () => {
+    if (!user || !userData || !firestore) {
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
+    const now = new Date();
+    const todayStart = startOfDay(now);
 
-    const neededTypes: ('daily' | 'weekly' | 'monthly')[] = ['daily', 'weekly', 'monthly'];
     const activeChallenges: Challenge[] = existingChallenges || [];
     
-    const hasDaily = activeChallenges.some(c => c.type === 'daily');
+    let hasDaily = activeChallenges.some(c => c.type === 'daily');
     const hasWeekly = activeChallenges.some(c => c.type === 'weekly');
     const hasMonthly = activeChallenges.some(c => c.type === 'monthly');
+
+    const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
+    const newChallenges: Challenge[] = [];
+
+    // Manually add daily challenges if they don't exist for today
+    if (!hasDaily) {
+        for (const challengeDef of defaultDailyChallenges) {
+            const dailyChallenge: Omit<Challenge, 'id'> = { ...challengeDef, type: 'daily', isCompleted: false, expiresAt: Timestamp.fromDate(endOfDay(now)) };
+            addDocumentNonBlocking(challengesCol, dailyChallenge);
+            newChallenges.push({ ...dailyChallenge, id: `temp-daily-${Math.random()}` } as Challenge);
+        }
+        hasDaily = true;
+    }
+
 
     if (hasDaily && hasWeekly && hasMonthly) {
       setChallenges(activeChallenges);
@@ -78,35 +117,28 @@ export function ChallengesCard() {
     }
     
     try {
-      const result = await createChallenges({
-        userId: user.uid,
-        level: userData.level || 1,
-        savingGoals: JSON.stringify(savingsGoalsData),
-        region: userData.region || 'US',
-        currency: userData.currency || 'USD',
-      });
-      
-      const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
-      const now = new Date();
-      const newChallenges: Challenge[] = [];
-
-      if (result.daily && !hasDaily) {
-        const dailyChallenge: Omit<Challenge, 'id'> = { ...result.daily, type: 'daily', isCompleted: false, expiresAt: Timestamp.fromDate(endOfDay(now)) };
-        addDocumentNonBlocking(challengesCol, dailyChallenge);
-        newChallenges.push({ ...dailyChallenge, id: `temp-${Math.random()}` } as Challenge);
-      }
-      if (result.weekly && !hasWeekly) {
-        const weeklyChallenge: Omit<Challenge, 'id'> = { ...result.weekly, type: 'weekly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
-        addDocumentNonBlocking(challengesCol, weeklyChallenge);
-        newChallenges.push({ ...weeklyChallenge, id: `temp-${Math.random()}` } as Challenge);
-      }
-      if (result.monthly && !hasMonthly) {
-        const monthlyChallenge: Omit<Challenge, 'id'> = { ...result.monthly, type: 'monthly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
-        addDocumentNonBlocking(challengesCol, monthlyChallenge);
-        newChallenges.push({ ...monthlyChallenge, id: `temp-${Math.random()}` } as Challenge);
+      // Use AI for weekly and monthly if needed
+      if (!hasWeekly || !hasMonthly) {
+        const result = await createChallenges({
+          userId: user.uid,
+          level: userData.level || 1,
+          savingGoals: JSON.stringify(savingsGoalsData),
+          region: userData.region || 'US',
+          currency: userData.currency || 'USD',
+        });
+        
+        if (result.weekly && !hasWeekly) {
+          const weeklyChallenge: Omit<Challenge, 'id'> = { ...result.weekly, type: 'weekly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
+          addDocumentNonBlocking(challengesCol, weeklyChallenge);
+          newChallenges.push({ ...weeklyChallenge, id: `temp-weekly-${Math.random()}` } as Challenge);
+        }
+        if (result.monthly && !hasMonthly) {
+          const monthlyChallenge: Omit<Challenge, 'id'> = { ...result.monthly, type: 'monthly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
+          addDocumentNonBlocking(challengesCol, monthlyChallenge);
+          newChallenges.push({ ...monthlyChallenge, id: `temp-monthly-${Math.random()}` } as Challenge);
+        }
       }
       
-      // We can't know the ID from non-blocking add, so we'll rely on the next fetch
       setChallenges([...activeChallenges, ...newChallenges]);
 
     } catch (err) {
@@ -119,13 +151,14 @@ export function ChallengesCard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, firestore, userData, existingChallenges, savingsGoalsData]);
+
 
   useEffect(() => {
     if(!areChallengesLoading && userData) {
         fetchAndSetChallenges();
     }
-  }, [areChallengesLoading, userData, savingsGoalsData]);
+  }, [areChallengesLoading, userData, savingsGoalsData, fetchAndSetChallenges]);
 
   const handleCompleteChallenge = (challenge: Challenge) => {
     if (!user || !firestore || !challenge.id || challenge.id.startsWith('temp-')) return;
