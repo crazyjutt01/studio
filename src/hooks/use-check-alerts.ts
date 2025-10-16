@@ -2,9 +2,10 @@
 
 import { useEffect, useCallback } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, doc, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, doc, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import type { Transaction, Budget, UserData, SavingsGoal, Alert } from '@/lib/data';
 import { generateAlerts } from '@/ai/flows/alert-generator';
+import { getDailyFinancialSummary } from '@/ai/flows/daily-financial-summary';
 import { useToast } from './use-toast';
 
 export function useCheckAlerts() {
@@ -37,7 +38,7 @@ export function useCheckAlerts() {
   const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
-  const checkAlerts = useCallback(async () => {
+  const checkSmartReminders = useCallback(async () => {
     if (user && firestore && userData && userData.smartReminders && transactionsData && budgetsData && savingsGoalsData && transactionsData.length > 0) {
       try {
         const alertSuggestions = await generateAlerts({
@@ -81,17 +82,72 @@ export function useCheckAlerts() {
             }
         }
       } catch (error) {
-        console.error("Failed to check for alerts:", error);
+        console.error("Failed to check for smart reminders:", error);
       }
     }
-  }, [user, firestore, userData, transactionsData, budgetsData, savingsGoalsData, toast]);
+  }, [user, firestore, userData, transactionsData, budgetsData, savingsGoalsData]);
+
+  const checkDailyDigest = useCallback(async () => {
+    if (user && firestore && userData && userData.dailyDigest && transactionsData) {
+        const now = new Date();
+        const digestTimeParts = userData.digestTime?.split(':').map(Number) || [8, 0];
+        const currentHour = now.getHours();
+
+        // Only run around the user's chosen hour
+        if (currentHour !== digestTimeParts[0]) {
+            return;
+        }
+
+        const alertsCol = collection(firestore, `users/${user.uid}/alerts`);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const recentDigestQuery = query(
+            alertsCol,
+            where('type', '==', 'Daily Digest'),
+            where('timestamp', '>=', today.toISOString()),
+            orderBy('timestamp', 'desc'),
+            limit(1)
+        );
+        
+        const snapshot = await getDocs(recentDigestQuery);
+        if (!snapshot.empty) {
+            // Already sent today
+            return;
+        }
+
+        try {
+            const result = await getDailyFinancialSummary({
+                userId: user.uid,
+                transactions: JSON.stringify(transactionsData),
+                region: userData.region || 'US',
+                currency: userData.currency || 'USD',
+            });
+            const alertData: Omit<Alert, 'id'> = {
+                userId: user.uid,
+                type: 'Daily Digest',
+                message: `${result.summary} - "${result.quote}"`,
+                timestamp: new Date().toISOString(),
+                isRead: false,
+                trigger: 'daily_digest'
+            };
+            addDocumentNonBlocking(alertsCol, alertData);
+
+        } catch(error) {
+            console.error("Failed to generate daily digest:", error);
+        }
+    }
+  }, [user, firestore, userData, transactionsData]);
+
 
   useEffect(() => {
-    // This interval check can be for less frequent, summary-style alerts.
-    // The more immediate alerts are triggered by user actions.
-    const interval = setInterval(checkAlerts, 5 * 60 * 1000); // 5 minutes
+    // This interval checks for both types of alerts.
+    const interval = setInterval(() => {
+        checkSmartReminders();
+        checkDailyDigest();
+    }, 5 * 60 * 1000); // 5 minutes
 
     // Clean up the interval when the component unmounts
     return () => clearInterval(interval);
-  }, [checkAlerts]);
+  }, [checkSmartReminders, checkDailyDigest]);
 }
