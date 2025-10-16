@@ -25,6 +25,9 @@ export function FloatingChatButton() {
                 </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[90vh] flex flex-col p-0 border-t-2">
+                 <SheetHeader>
+                    <SheetTitle className="sr-only">AdvisorAI Chat</SheetTitle>
+                 </SheetHeader>
                  <AdvisorAICard isPage={true} isChat={true} />
             </SheetContent>
       </Sheet>
