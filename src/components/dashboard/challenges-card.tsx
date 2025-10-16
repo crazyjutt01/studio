@@ -23,32 +23,32 @@ import {
 
 const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionType' | 'actionValue'>[] = [
     {
-      title: 'Track Your Spending',
-      description: 'Record at least one transaction today.',
-      xp: 15,
-      coins: 15,
-      tip: 'Use SpendSpy to upload a receipt for a quick and easy way to track expenses!',
+        title: 'Track Your Spending',
+        description: 'Record at least one transaction today.',
+        xp: 15,
+        coins: 15,
+        tip: 'Use SpendSpy to upload a receipt for a quick and easy way to track expenses!',
     },
     {
-      title: 'Check Your Budgets',
-      description: 'Visit the BudgetBot page to see your spending limits.',
-      xp: 10,
-      coins: 10,
-      tip: 'Knowing your budget is the first step to staying on track!',
+        title: 'Check Your Budgets',
+        description: 'Visit the BudgetBot page to see your spending limits.',
+        xp: 10,
+        coins: 10,
+        tip: 'Knowing your budget is the first step to staying on track!',
     },
     {
-      title: 'Review Your Goals',
-      description: 'Look at your savings goals on the GoalGuru page.',
-      xp: 10,
-      coins: 10,
-      tip: 'Keeping your goals in mind helps you stay motivated.',
+        title: 'Review Your Goals',
+        description: 'Look at your savings goals on the GoalGuru page.',
+        xp: 10,
+        coins: 10,
+        tip: 'Keeping your goals in mind helps you stay motivated.',
     },
-     {
-      title: 'Ask for Advice',
-      description: 'Ask AdvisorAI a question about your finances.',
-      xp: 20,
-      coins: 20,
-      tip: 'AdvisorAI can give you an instant summary of your spending. Try asking "How much did I spend this week?".',
+    {
+        title: 'Ask for Advice',
+        description: 'Ask AdvisorAI a question about your finances.',
+        xp: 20,
+        coins: 20,
+        tip: 'AdvisorAI can give you an instant summary of your spending. Try asking "How much did I spend this week?".',
     },
 ];
 
@@ -97,29 +97,28 @@ export function ChallengesCard() {
   const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
   const { data: allChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
 
-  const activeChallenges = useMemo(() => allChallenges?.filter(c => isAfter(c.expiresAt.toDate(), new Date())) || [], [allChallenges]);
-
   const fetchAndSetChallenges = useCallback(async () => {
-    if (!user || !userData || !firestore) {
-      setIsLoading(false);
+    if (!user || !userData || !firestore || areChallengesLoading) {
       return;
     }
 
     setIsLoading(true);
-
-    const now = new Date();
-    const startOfToday = startOfDay(now);
-
-    const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
     
-    // Check for daily challenges for today
-    const dailyQuery = query(challengesCol, where('type', '==', 'daily'), where('expiresAt', '>', Timestamp.fromDate(startOfToday)));
-    const dailySnapshot = await getDocs(dailyQuery);
+    const now = new Date();
+    const hasDaily = allChallenges?.some(c => c.type === 'daily' && isAfter(c.expiresAt.toDate(), startOfDay(now))) ?? false;
+    const hasWeekly = allChallenges?.some(c => c.type === 'weekly') ?? false;
+    const hasMonthly = allChallenges?.some(c => c.type === 'monthly') ?? false;
 
+    if (hasDaily && hasWeekly && hasMonthly) {
+      setIsLoading(false);
+      return;
+    }
+    
+    const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
     const batch = writeBatch(firestore);
     let challengesCreated = false;
 
-    if (dailySnapshot.empty) {
+    if (!hasDaily) {
         defaultDailyChallenges.forEach(challengeDef => {
             const newChallengeRef = doc(challengesCol);
             const dailyChallenge: Omit<Challenge, 'id'> = {
@@ -135,10 +134,6 @@ export function ChallengesCard() {
         });
         challengesCreated = true;
     }
-
-    // AI-based weekly and monthly challenges
-    const hasWeekly = activeChallenges.some(c => c.type === 'weekly');
-    const hasMonthly = activeChallenges.some(c => c.type === 'monthly');
 
     if (!hasWeekly || !hasMonthly) {
         try {
@@ -170,24 +165,25 @@ export function ChallengesCard() {
     if (challengesCreated) {
         await batch.commit();
     }
+
     setIsLoading(false);
 
-  }, [user, firestore, userData, activeChallenges, savingsGoalsData]);
+  }, [user, firestore, userData, areChallengesLoading, allChallenges, savingsGoalsData]);
 
 
   useEffect(() => {
-    if(!areChallengesLoading && userData && user) {
+    if(userData && user) {
         fetchAndSetChallenges();
     }
-  }, [areChallengesLoading, userData, user, fetchAndSetChallenges]);
+  }, [userData, user, fetchAndSetChallenges]);
   
   const checkChallengeEligibility = useCallback(async () => {
-    if (!activeChallenges.length || !user || !firestore) return;
+    if (!allChallenges?.length || !user || !firestore) return;
 
     const batch = writeBatch(firestore);
     let dirty = false;
 
-    activeChallenges.forEach(challenge => {
+    allChallenges.forEach(challenge => {
         if(challenge.status !== 'active') return;
 
         let isEligible = false;
@@ -211,7 +207,7 @@ export function ChallengesCard() {
     if(dirty) {
         await batch.commit();
     }
-  }, [activeChallenges, transactionsData, user, firestore]);
+  }, [allChallenges, transactionsData, user, firestore]);
 
   useEffect(() => {
     checkChallengeEligibility();
@@ -232,8 +228,8 @@ export function ChallengesCard() {
   };
   
   const sortedChallenges = useMemo(() => {
-    if (!activeChallenges) return [];
-    return [...activeChallenges].sort((a,b) => {
+    if (!allChallenges) return [];
+    return [...allChallenges].sort((a,b) => {
         const order = { daily: 1, weekly: 2, monthly: 3 };
         const typeOrder = order[a.type] - order[b.type];
         if (typeOrder !== 0) return typeOrder;
@@ -241,7 +237,7 @@ export function ChallengesCard() {
         const statusOrder = { eligible: 1, active: 2, completed: 3 };
         return statusOrder[a.status] - statusOrder[b.status];
     });
-  }, [activeChallenges]);
+  }, [allChallenges]);
 
 
   return (
