@@ -14,6 +14,8 @@ import { z } from 'genkit';
 export const DailyFinancialSummaryInputSchema = z.object({
   userId: z.string().describe('The user ID.'),
   transactions: z.string().describe('A JSON string of the user\'s transactions.'),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 
 export type DailyFinancialSummaryInput = z.infer<typeof DailyFinancialSummaryInputSchema>;
@@ -37,13 +39,13 @@ const prompt = ai.definePrompt({
     name: 'dailyFinancialSummaryPrompt',
     input: { schema: DailyFinancialSummaryInputSchema },
     output: { schema: DailyFinancialSummaryOutputSchema },
-    prompt: `You are FinSafe, a personal finance assistant. Your task is to generate a daily financial digest for the user based on their transaction data.
+    prompt: `You are FinSafe, a personal finance assistant. Your task is to generate a daily financial digest for the user based on their transaction data. The user is from the '{{{region}}}' region and their currency is '{{{currency}}}'.
 
     User's transactions: {{{transactions}}}
     
     1.  Calculate the total spending for today.
     2.  Calculate the total spending for the current month.
-    3.  Generate a concise, one-sentence summary of this activity.
+    3.  Generate a concise, one-sentence summary of this activity, using the user's currency.
     4.  Find a short, inspirational quote about money or financial discipline.
     
     Return the information in the specified JSON format.`,

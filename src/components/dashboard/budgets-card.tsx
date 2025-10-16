@@ -38,6 +38,7 @@ import {
       AlertDialogHeader,
       AlertDialogTitle,
     } from '@/components/ui/alert-dialog';
+import { useCurrency } from '@/hooks/use-currency';
 
 function getSpentAmount(
   transactions: Transaction[] | null,
@@ -64,6 +65,7 @@ function getSpentAmount(
 export function BudgetsCard() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { currencySymbol } = useCurrency();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -146,7 +148,7 @@ export function BudgetsCard() {
                         </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">
-                          ${spent.toLocaleString()} / $
+                          {currencySymbol}{spent.toLocaleString()} / {currencySymbol}
                           {budget.amount.toLocaleString()}
                         </span>
                         <DropdownMenu>

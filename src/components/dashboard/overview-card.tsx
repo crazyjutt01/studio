@@ -11,6 +11,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { ArrowDown, ArrowUp, TrendingUp, TrendingDown, PiggyBank, Wallet } from 'lucide-react';
 import type { UserData, CategoryData } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
+import { useCurrency } from '@/hooks/use-currency';
 
 type OverviewCardProps = {
   categoryData: CategoryData[] | null;
@@ -41,6 +42,7 @@ const chartConfig = {
 };
 
 export function OverviewCard({ categoryData, totalSpending, userData }: OverviewCardProps) {
+  const { currencySymbol } = useCurrency();
   const chartData = categoryData?.map(c => ({
     category: c.name,
     spending: c.total
@@ -67,7 +69,7 @@ export function OverviewCard({ categoryData, totalSpending, userData }: Overview
                     <Wallet className="w-4 h-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">${income.toLocaleString()}</div>}
+                    {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencySymbol}{income.toLocaleString()}</div>}
                     <p className="text-xs text-muted-foreground">Based on your profile</p>
                 </CardContent>
             </Card>
@@ -77,7 +79,7 @@ export function OverviewCard({ categoryData, totalSpending, userData }: Overview
                     <TrendingDown className="w-4 h-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">${spending.toLocaleString()}</div>}
+                    {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">{currencySymbol}{spending.toLocaleString()}</div>}
                     <p className="text-xs text-muted-foreground flex items-center">
                         This month's expenses
                     </p>
@@ -104,7 +106,7 @@ export function OverviewCard({ categoryData, totalSpending, userData }: Overview
                 <CardContent>
                     {isLoading ? <Skeleton className="h-8 w-3/4" /> : (
                          <div className={`text-2xl font-bold ${netFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {netFlow >= 0 ? '+' : '-'}${Math.abs(netFlow).toLocaleString()}
+                            {netFlow >= 0 ? '+' : '-'}{currencySymbol}{Math.abs(netFlow).toLocaleString()}
                         </div>
                     )}
                      <p className="text-xs text-muted-foreground">
@@ -126,7 +128,7 @@ export function OverviewCard({ categoryData, totalSpending, userData }: Overview
                   tickMargin={10}
                   axisLine={false}
                 />
-                <YAxis tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(value) => `$${value}`} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={10} tickFormatter={(value) => `${currencySymbol}${value}`} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="spending" radius={8}>
                   {chartData?.map((entry) => (

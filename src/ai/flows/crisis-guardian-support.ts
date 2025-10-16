@@ -20,6 +20,8 @@ const CrisisSupportInputSchema = z.object({
   savingGoals: z
     .string()
     .describe("A JSON string of the user's saving goals."),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 export type CrisisSupportInput = z.infer<typeof CrisisSupportInputSchema>;
 
@@ -46,7 +48,7 @@ const prompt = ai.definePrompt({
   name: 'crisisSupportPrompt',
   input: {schema: CrisisSupportInputSchema},
   output: {schema: CrisisSupportOutputSchema},
-  prompt: `You are CrisisGuardian, a friendly and empathetic AI financial protector. Your motto is: “I step in when things go wrong.”
+  prompt: `You are CrisisGuardian, a friendly and empathetic AI financial protector. Your motto is: “I step in when things go wrong.” The user is from the '{{{region}}}' region and their currency is '{{{currency}}}'.
 
 Your role is to analyze a user's financial data to spot signs of distress, like a sudden large expense, a drop in income, or consistent overspending.
 
@@ -65,7 +67,7 @@ If there is a stress event, identify it.
 
 Then, generate your response:
 1.  **Friendly Message:** Write a short, empathetic message that acknowledges the specific situation. Use emojis where appropriate.
-2.  **Recovery Plan:** Create a clear, step-by-step plan with 2-3 actionable steps. This could include suggestions like temporarily pausing a savings goal, adjusting a budget, or cutting back on specific spending categories for a short period.
+2.  **Recovery Plan:** Create a clear, step-by-step plan with 2-3 actionable steps. This could include suggestions like temporarily pausing a savings goal, adjusting a budget, or cutting back on specific spending categories for a short period. Your advice should be mindful of the user's currency and region.
 `,
 });
 

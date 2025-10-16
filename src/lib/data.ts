@@ -1,3 +1,4 @@
+'use client';
 import type { LucideIcon } from 'lucide-react';
 import { Landmark, Plane, ShoppingCart, UtensilsCrossed } from 'lucide-react';
 
@@ -49,6 +50,8 @@ export type UserData = {
   smartReminders?: boolean;
   dailyDigest?: boolean;
   digestTime?: string;
+  region?: string;
+  currency?: string;
 };
 
 export type Alert = {
@@ -112,4 +115,24 @@ export const categoryIcons: CategoryIcons = {
   Travel: Plane,
   Shopping: ShoppingCart,
   Bills: Landmark
+};
+
+export const regions = [
+    { value: 'US', label: 'United States', currency: 'USD' },
+    { value: 'GB', label: 'United Kingdom', currency: 'GBP' },
+    { value: 'EU', label: 'European Union', currency: 'EUR' },
+    { value: 'IN', label: 'India', currency: 'INR' },
+    { value: 'JP', label: 'Japan', currency: 'JPY' },
+    { value: 'CA', label: 'Canada', currency: 'CAD' },
+    { value: 'AU', label: 'Australia', currency: 'AUD' },
+];
+  
+export const currencies: { [key: string]: { symbol: string, name: string } } = {
+    USD: { symbol: '$', name: 'US Dollar' },
+    GBP: { symbol: '£', name: 'British Pound' },
+    EUR: { symbol: '€', name: 'Euro' },
+    INR: { symbol: '₹', name: 'Indian Rupee' },
+    JPY: { symbol: '¥', name: 'Japanese Yen' },
+    CAD: { symbol: '$', name: 'Canadian Dollar' },
+    AUD: { symbol: '$', name: 'Australian Dollar' },
 };

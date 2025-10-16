@@ -48,6 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface RecentTransactionsCardProps {
   transactions: Transaction[] | null;
@@ -63,6 +64,7 @@ export function RecentTransactionsCard({
     useState<Transaction | null>(null);
   const { user } = useUser();
   const firestore = useFirestore();
+  const { currencySymbol } = useCurrency();
 
   const openEditDialog = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
@@ -163,7 +165,7 @@ export function RecentTransactionsCard({
                         {new Date(transaction.date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${transaction.amount.toFixed(2)}
+                        {currencySymbol}{transaction.amount.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

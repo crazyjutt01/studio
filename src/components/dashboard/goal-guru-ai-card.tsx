@@ -79,6 +79,8 @@ export function GoalGuruAICard() {
         income: userData.monthlyIncome,
         expenses: JSON.stringify(expenses),
         savingGoals: JSON.stringify(savingsGoalsData),
+        region: userData.region || 'US',
+        currency: userData.currency || 'USD',
       });
       setTips(result.tips);
     } catch (err) {

@@ -13,6 +13,7 @@ import type { SavingsGoal, UserData } from '@/lib/data';
 import { Scale } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { subMonths, format } from 'date-fns';
+import { useCurrency } from '@/hooks/use-currency';
 
 // Helper to generate chart data
 const generateChartData = (totalAssets: number) => {
@@ -38,6 +39,7 @@ const generateChartData = (totalAssets: number) => {
 export function NetWorthCard() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { currencySymbol } = useCurrency();
 
     const userDocRef = useMemoFirebase(() => {
         if (!user) return null;
@@ -83,7 +85,7 @@ export function NetWorthCard() {
             </div>
         ) : (
         <>
-            <div className="text-4xl font-bold tracking-tight">${netWorth.toLocaleString()}</div>
+            <div className="text-4xl font-bold tracking-tight">{currencySymbol}{netWorth.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mb-4">
                 {percentageChange >= 0 ? 'An increase' : 'A decrease'} of {Math.abs(percentageChange).toFixed(1)}% from last month.
             </p>
@@ -103,7 +105,7 @@ export function NetWorthCard() {
                                 border: '1px solid hsl(var(--border))',
                                 borderRadius: 'var(--radius)',
                             }}
-                            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Net Worth']}
+                            formatter={(value: number) => [`${currencySymbol}${value.toLocaleString()}`, 'Net Worth']}
                         />
                         <Area type="monotone" dataKey="netWorth" stroke="hsl(var(--primary))" fill="url(#colorNetWorth)" />
                     </AreaChart>

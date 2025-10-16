@@ -19,6 +19,8 @@ const GenerateAlertsInputSchema = z.object({
   budgets: z.string().describe("A JSON string of the user's budgets."),
   goals: z.string().describe("A JSON string of the user's saving goals."),
   monthlyIncome: z.number().describe("The user's monthly income."),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 export type GenerateAlertsInput = z.infer<typeof GenerateAlertsInputSchema>;
 
@@ -52,7 +54,7 @@ const prompt = ai.definePrompt({
   name: 'generateAlertsPrompt',
   input: {schema: GenerateAlertsInputSchema},
   output: {schema: GenerateAlertsOutputSchema},
-  prompt: `You are an intelligent financial assistant, AlertGenie. Your task is to analyze a user's financial data to generate helpful, timely, and motivational alerts.
+  prompt: `You are an intelligent financial assistant, AlertGenie. Your task is to analyze a user's financial data to generate helpful, timely, and motivational alerts. The user is from the '{{{region}}}' region and their currency is '{{{currency}}}'.
 
 Analyze the user's data:
 - Monthly Income: {{{monthlyIncome}}}
@@ -60,7 +62,7 @@ Analyze the user's data:
 - Saving Goals: {{{goals}}}
 - Transactions: {{{transactions}}}
 
-Generate alerts based on the following rules. You will return a suggestion for each rule that is met.
+Generate alerts based on the following rules. You will return a suggestion for each rule that is met. Make sure to use the user's currency when mentioning money.
 
 1.  **Total Spending vs. Income**:
     - Calculate the total spending for the current month from the transactions.

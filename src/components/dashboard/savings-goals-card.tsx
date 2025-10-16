@@ -39,11 +39,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
   } from '@/components/ui/alert-dialog';
+import { useCurrency } from '@/hooks/use-currency';
 
 
 export function SavingsGoalsCard() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { currencySymbol } = useCurrency();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -126,7 +128,7 @@ export function SavingsGoalsCard() {
                         <span className="flex items-center gap-2">{goal.name}</span>
                         <div className="flex items-center gap-2">
                             <span className="text-sm">
-                                ${goal.currentAmount.toLocaleString()} / $
+                                {currencySymbol}{goal.currentAmount.toLocaleString()} / {currencySymbol}
                                 {goal.targetAmount.toLocaleString()}
                             </span>
                             <DropdownMenu>

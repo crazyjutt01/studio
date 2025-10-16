@@ -22,6 +22,30 @@
         "lastName": {
           "type": "string",
           "description": "User's last name."
+        },
+        "assets": {
+          "type": "number",
+          "description": "The total value of the user's assets."
+        },
+        "smartReminders": {
+          "type": "boolean",
+          "description": "Whether the user has enabled smart reminders."
+        },
+        "dailyDigest": {
+          "type": "boolean",
+          "description": "Whether the user has enabled daily digest notifications."
+        },
+        "digestTime": {
+          "type": "string",
+          "description": "The time of day the user wants to receive their daily digest."
+        },
+        "region": {
+            "type": "string",
+            "description": "The user's selected region (e.g., 'US', 'GB')."
+        },
+        "currency": {
+            "type": "string",
+            "description": "The user's selected currency (e.g., 'USD', 'GBP')."
         }
       },
       "required": [
@@ -206,6 +230,14 @@
         "isRead": {
           "type": "boolean",
           "description": "Indicates whether the alert has been read by the user."
+        },
+        "budgetName": {
+          "type": "string",
+          "description": "The name of the budget this alert is associated with."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "The reason the alert was triggered."
         }
       },
       "required": [
@@ -271,7 +303,7 @@
           "description": "A JSON string of the user's saving goals."
         },
         "friendlyMessage": {
-            "type": "string"
+          "type": "string"
         },
         "recoveryPlan": {
           "type": "array",
@@ -285,17 +317,56 @@
                 "type": "string"
               }
             },
-            "required": ["title", "details"]
+            "required": [
+              "title",
+              "details"
+            ]
           }
         }
       },
-      "required": ["transactions", "budgets", "savingGoals", "friendlyMessage", "recoveryPlan"]
+      "required": [
+        "transactions",
+        "budgets",
+        "savingGoals",
+        "friendlyMessage",
+        "recoveryPlan"
+      ]
+    },
+    "GoalAdvice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GoalAdvice",
+      "type": "object",
+      "description": "Represents AI-generated advice for achieving savings goals.",
+      "properties": {
+        "income": {
+          "type": "number"
+        },
+        "expenses": {
+          "type": "string"
+        },
+        "savingGoals": {
+          "type": "string"
+        },
+        "tips": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "income",
+        "expenses",
+        "savingGoals",
+        "tips"
+      ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {

@@ -17,6 +17,8 @@ const PersonalizedBudgetInputSchema = z.object({
   assets: z.number().describe('Total assets of the user.'),
   transactions: z.string().describe('JSON string of recent transactions.'),
   savingGoals: z.string().describe('JSON string of user-specified saving goals.'),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 export type PersonalizedBudgetInput = z.infer<typeof PersonalizedBudgetInputSchema>;
 
@@ -39,7 +41,7 @@ const prompt = ai.definePrompt({
   name: 'budgetBotPersonalizedBudgetPrompt',
   input: {schema: PersonalizedBudgetInputSchema},
   output: {schema: PersonalizedBudgetOutputSchema},
-  prompt: `You are BudgetBot, a friendly and insightful AI financial advisor. Your goal is to help users create a realistic and effective monthly budget.
+  prompt: `You are BudgetBot, a friendly and insightful AI financial advisor. Your goal is to help users create a realistic and effective monthly budget. The user is from the '{{{region}}}' region and their currency is '{{{currency}}}'.
 
 Analyze the user's complete financial situation based on the data below:
 - Monthly Income: {{{income}}}
@@ -51,7 +53,7 @@ Based on this data, generate a recommended monthly budget for the user. The budg
 
 Your response should include:
 1.  A 'summary': A short, encouraging paragraph explaining your recommendations. Mention how this budget helps them achieve their savings goals while being realistic about their spending habits.
-2.  A 'recommendations' array: A list of objects, each containing a 'category' and a suggested 'amount' for that category.
+2.  A 'recommendations' array: A list of objects, each containing a 'category' and a suggested 'amount' for that category in the user's currency.
 
 Ensure the total of your recommended budget amounts does not exceed the user's monthly income. Be mindful of their past spending habits from their transactions to make the budget realistic.
 `,

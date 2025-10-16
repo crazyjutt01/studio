@@ -15,9 +15,10 @@ import { recordExpense, type RecordExpenseOutput } from '@/ai/flows/spend-spy-ex
 import { Loader2, UploadCloud, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import type { Transaction } from '@/lib/data';
+import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import type { Transaction, UserData } from '@/lib/data';
+import { useCurrency } from '@/hooks/use-currency';
 
 export function SpendSpyCard() {
   const [isDragging, setIsDragging] = useState(false);
@@ -29,9 +30,17 @@ export function SpendSpyCard() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { currencySymbol } = useCurrency();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
+  
+  const { data: userData } = useDoc<UserData>(userDocRef);
 
   const handleFileChange = (file: File) => {
-    if (!file || !user) return;
+    if (!file || !user || !userData) return;
 
     if (!file.type.startsWith('image/')) {
         setError('Please upload an image file.');
@@ -47,7 +56,12 @@ export function SpendSpyCard() {
       setResult(null);
 
       try {
-        const output = await recordExpense({ userId: user.uid, receiptDataUri: dataUri });
+        const output = await recordExpense({ 
+            userId: user.uid, 
+            receiptDataUri: dataUri,
+            region: userData.region || 'US',
+            currency: userData.currency || 'USD',
+        });
         setResult(output);
         if (user && firestore) {
             const transactionData: Omit<Transaction, 'id'> = {
@@ -61,7 +75,7 @@ export function SpendSpyCard() {
             addDocumentNonBlocking(transactionsCol, transactionData);
              toast({
                 title: 'Expense Recorded',
-                description: `${output.expenseDetails.merchant} for $${output.expenseDetails.amount} has been added.`,
+                description: `${output.expenseDetails.merchant} for ${currencySymbol}${output.expenseDetails.amount} has been added.`,
              });
         }
       } catch (err) {
@@ -178,7 +192,7 @@ export function SpendSpyCard() {
                      </div>
                      <ul className="pl-6 space-y-1 text-muted-foreground">
                         <li><strong>Merchant:</strong> {result.expenseDetails.merchant}</li>
-                        <li><strong>Amount:</strong> ${result.expenseDetails.amount}</li>
+                        <li><strong>Amount:</strong> {currencySymbol}{result.expenseDetails.amount}</li>
                         <li><strong>Date:</strong> {result.expenseDetails.date}</li>
                         <li><strong>Category:</strong> {result.expenseDetails.category}</li>
                         {result.expenseDetails.description && <li><strong>Description:</strong> {result.expenseDetails.description}</li>}

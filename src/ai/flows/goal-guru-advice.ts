@@ -18,6 +18,8 @@ const GoalAdviceInputSchema = z.object({
     .string()
     .describe('A JSON string representing a list of expenses with category and amount.'),
   savingGoals: z.string().describe("A JSON string of the user's current saving goals."),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 export type GoalAdviceInput = z.infer<typeof GoalAdviceInputSchema>;
 
@@ -36,7 +38,7 @@ const prompt = ai.definePrompt({
   name: 'goalGuruAdvicePrompt',
   input: {schema: GoalAdviceInputSchema},
   output: {schema: GoalAdviceOutputSchema},
-  prompt: `You are GoalGuru, an AI financial advisor focused on helping users achieve their savings goals faster.
+  prompt: `You are GoalGuru, an AI financial advisor focused on helping users achieve their savings goals faster. You are advising a user from the '{{{region}}}' region and their currency is '{{{currency}}}'.
 
 Based on the user's income, expenses, and existing savings goals, provide actionable, goal-oriented advice.
 
@@ -44,7 +46,7 @@ Income: {{{income}}}
 Expenses: {{{expenses}}}
 Saving Goals: {{{savingGoals}}}
 
-Provide specific tips on how to cut spending or allocate funds more effectively to accelerate their progress towards their goals. Keep the tips concise and encouraging.
+Provide specific tips on how to cut spending or allocate funds more effectively to accelerate their progress towards their goals. Keep the tips concise and encouraging. Mention amounts in the user's currency where relevant.
 
 Format the tips as an array of strings.
 `,

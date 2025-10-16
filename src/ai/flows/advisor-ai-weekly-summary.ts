@@ -24,6 +24,8 @@ const AdvisorAIWeeklySummaryInputSchema = z.object({
     .string()
     .optional()
     .describe('A specific question from the user about their finances.'),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 export type AdvisorAIWeeklySummaryInput = z.infer<
   typeof AdvisorAIWeeklySummaryInputSchema
@@ -50,7 +52,7 @@ const prompt = ai.definePrompt({
   name: 'advisorAIWeeklySummaryPrompt',
   input: {schema: AdvisorAIWeeklySummaryInputSchema},
   output: {schema: AdvisorAIWeeklySummaryOutputSchema},
-  prompt: `You are a personal finance advisor. Your name is AdvisorAI.
+  prompt: `You are a personal finance advisor. Your name is AdvisorAI. You are helping a user from the '{{{region}}}' region and their currency is '{{{currency}}}'.
   
   You have access to the user's financial data.
   - Transactions: {{{transactions}}}
@@ -59,6 +61,7 @@ const prompt = ai.definePrompt({
   
   If the user asks a specific question, answer it based on the data provided. Be thorough and provide actionable advice.
   If the user does not ask a question, generate a concise summary of their financial situation. Focus on key spending areas, budget adherence, and progress towards saving goals. Be friendly and encouraging.
+  When mentioning monetary values, use the user's currency.
 
   User Question: {{{question}}}
 

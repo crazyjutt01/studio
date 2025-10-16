@@ -15,6 +15,7 @@ import { Loader2, Bot, CircleDollarSign } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
 import type { Transaction, UserData, SavingsGoal } from '@/lib/data';
+import { useCurrency } from '@/hooks/use-currency';
 
 export function BudgetBotCard() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +23,7 @@ export function BudgetBotCard() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { currencySymbol } = useCurrency();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -60,6 +62,8 @@ export function BudgetBotCard() {
         assets: userData.assets || 0,
         transactions: JSON.stringify(transactionsData),
         savingGoals: JSON.stringify(savingsGoalsData),
+        region: userData.region || 'US',
+        currency: userData.currency || 'USD',
       });
       setBudgetResponse(result);
     } catch (err) {
@@ -99,7 +103,7 @@ export function BudgetBotCard() {
                 {budgetResponse.recommendations.map((rec, index) => (
                     <div key={index} className="p-3 bg-secondary/50 rounded-lg">
                         <p className="text-sm text-muted-foreground">{rec.category}</p>
-                        <p className="text-xl font-bold">${rec.amount.toLocaleString()}</p>
+                        <p className="text-xl font-bold">{currencySymbol}{rec.amount.toLocaleString()}</p>
                     </div>
                 ))}
             </div>

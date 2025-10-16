@@ -11,9 +11,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BotMessageSquare, Loader2, Send } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import type { Transaction, Budget, SavingsGoal } from '@/lib/data';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import type { Transaction, Budget, SavingsGoal, UserData } from '@/lib/data';
 import { advisorAIWeeklySummary } from '@/ai/flows/advisor-ai-weekly-summary';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,11 @@ export function AdvisorAICard({ isPage, isChat }: { isPage?: boolean, isChat?: b
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore]);
+
   const transactionsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(firestore, `users/${user.uid}/transactions`));
@@ -45,12 +50,13 @@ export function AdvisorAICard({ isPage, isChat }: { isPage?: boolean, isChat?: b
     return query(collection(firestore, `users/${user.uid}/savingGoals`));
   }, [user, firestore]);
 
+  const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
   const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || !user || !transactionsData || !budgetsData || !savingsGoalsData) return;
+    if (!input.trim() || !user || !transactionsData || !budgetsData || !savingsGoalsData || !userData) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -63,7 +69,9 @@ export function AdvisorAICard({ isPage, isChat }: { isPage?: boolean, isChat?: b
         transactions: JSON.stringify(transactionsData),
         budgets: JSON.stringify(budgetsData),
         savingGoals: JSON.stringify(savingsGoalsData),
-        question: input
+        question: input,
+        region: userData.region || 'US',
+        currency: userData.currency || 'USD',
       });
       const assistantMessage: Message = { role: 'assistant', content: result.summary };
       setMessages(prev => [...prev, assistantMessage]);

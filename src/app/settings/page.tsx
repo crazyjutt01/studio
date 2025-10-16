@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserData } from '@/lib/data';
+import { regions, currencies } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +34,8 @@ const profileFormSchema = z.object({
   smartReminders: z.boolean().default(false),
   dailyDigest: z.boolean().default(false),
   digestTime: z.string().optional(),
+  region: z.string().optional(),
+  currency: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -59,6 +62,8 @@ export default function SettingsPage() {
       smartReminders: false,
       dailyDigest: false,
       digestTime: '08:00',
+      region: 'US',
+      currency: 'USD',
     },
   });
 
@@ -72,9 +77,22 @@ export default function SettingsPage() {
         smartReminders: userData.smartReminders || false,
         dailyDigest: userData.dailyDigest || false,
         digestTime: userData.digestTime || '08:00',
+        region: userData.region || 'US',
+        currency: userData.currency || 'USD',
       });
     }
   }, [userData, form]);
+  
+  const watchedRegion = form.watch('region');
+
+  useEffect(() => {
+    if(watchedRegion) {
+        const regionData = regions.find(r => r.value === watchedRegion);
+        if(regionData) {
+            form.setValue('currency', regionData.currency);
+        }
+    }
+  }, [watchedRegion, form]);
 
   const { isSubmitting, isDirty } = form.formState;
 
@@ -189,6 +207,61 @@ export default function SettingsPage() {
                                     />
                                 </>
                             )}
+                        </CardContent>
+                        
+                        <Separator className="my-6" />
+
+                        <CardHeader className="-mt-6">
+                            <CardTitle>Localization</CardTitle>
+                            <CardDescription>Set your region and currency.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="region"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Region</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Select a region" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {regions.map(region => (
+                                                <SelectItem key={region.value} value={region.value}>{region.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="currency"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Currency</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                            <SelectValue placeholder="Select a currency" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {Object.entries(currencies).map(([code, {name}]) => (
+                                                <SelectItem key={code} value={code}>{name} ({code})</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </div>
                         </CardContent>
                         
                         <Separator className="my-6" />

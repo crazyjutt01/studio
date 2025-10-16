@@ -18,6 +18,8 @@ const RecordExpenseInputSchema = z.object({
       'A photo of a receipt, as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' /* html-escape:quotes=true */
     ),
   description: z.string().optional().describe('Optional description of the expense.'),
+  region: z.string().optional().describe('The user\'s region (e.g., US, GB).'),
+  currency: z.string().optional().describe('The user\'s currency (e.g., USD, GBP).'),
 });
 export type RecordExpenseInput = z.infer<typeof RecordExpenseInputSchema>;
 
@@ -40,7 +42,7 @@ const recordExpensePrompt = ai.definePrompt({
   name: 'recordExpensePrompt',
   input: {schema: RecordExpenseInputSchema},
   output: {schema: RecordExpenseOutputSchema},
-  prompt: `You are an AI assistant specialized in extracting expense details from receipt images.
+  prompt: `You are an AI assistant specialized in extracting expense details from receipt images. You are operating for a user in the '{{{region}}}' region and their currency is '{{{currency}}}'.
 
   Analyze the provided receipt image and extract the following information:
   - Date: The date of the expense (YYYY-MM-DD).

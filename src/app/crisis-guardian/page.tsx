@@ -7,9 +7,9 @@ import { ShieldAlert, PlusCircle, User, Phone, Handshake, Bot, Loader2, HeartHan
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AddEmergencyContactForm } from '@/components/forms/add-emergency-contact-form';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import type { EmergencyContact, Transaction, Budget, SavingsGoal } from '@/lib/data';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
+import type { EmergencyContact, Transaction, Budget, SavingsGoal, UserData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCrisisSupport, CrisisSupportOutput } from '@/ai/flows/crisis-guardian-support';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -21,6 +21,11 @@ export default function CrisisGuardianPage() {
 
   const [aiSupport, setAiSupport] = useState<CrisisSupportOutput | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  
+  const userDocRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, `users/${user.uid}`);
+  }, [user, firestore]);
 
   const contactsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -42,13 +47,14 @@ export default function CrisisGuardianPage() {
     return query(collection(firestore, `users/${user.uid}/savingGoals`));
   }, [user, firestore]);
 
+  const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: contacts, isLoading: areContactsLoading } = useCollection<EmergencyContact>(contactsQuery);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
   const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const handleGetSupport = async () => {
-    if (!user || !transactionsData || !budgetsData || !savingsGoalsData) return;
+    if (!user || !transactionsData || !budgetsData || !savingsGoalsData || !userData) return;
     setIsAiLoading(true);
     setAiSupport(null);
     try {
@@ -57,6 +63,8 @@ export default function CrisisGuardianPage() {
           transactions: JSON.stringify(transactionsData),
           budgets: JSON.stringify(budgetsData),
           savingGoals: JSON.stringify(savingsGoalsData),
+          region: userData.region || 'US',
+          currency: userData.currency || 'USD',
       });
       setAiSupport(result);
     } catch (error) {

@@ -75,6 +75,8 @@ export default function SignUpPage() {
            monthlyIncome: 0,
            savingGoals: 'Get started with FinSafe!',
            assets: 0,
+           region: 'US',
+           currency: 'USD',
        });
 
        router.push('/dashboard');
@@ -112,6 +114,8 @@ export default function SignUpPage() {
            monthlyIncome: 0,
            savingGoals: 'Get started with FinSafe!',
            assets: 0,
+           region: 'US',
+           currency: 'USD',
         });
       }
       router.push('/dashboard');
