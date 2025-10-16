@@ -14,19 +14,51 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where, Timestamp, getDocs, limit, orderBy } from 'firebase/firestore';
+import {
+  useUser,
+  useFirestore,
+  addDocumentNonBlocking,
+  useCollection,
+  useDoc,
+  useMemoFirebase,
+  updateDocumentNonBlocking,
+} from '@/firebase';
+import {
+  collection,
+  doc,
+  query,
+  where,
+  Timestamp,
+  getDocs,
+  limit,
+  orderBy,
+} from 'firebase/firestore';
 import { Loader2, CalendarIcon } from 'lucide-react';
-import type { Transaction, UserData, Budget, SavingsGoal, Alert } from '@/lib/data';
+import type {
+  Transaction,
+  UserData,
+  Budget,
+  SavingsGoal,
+  Alert,
+} from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '../ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { generateAlerts } from '@/ai/flows/alert-generator';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
-  description: z.string().min(2, { message: 'Description must be at least 2 characters.' }),
+  description: z
+    .string()
+    .min(2, { message: 'Description must be at least 2 characters.' }),
   amount: z.coerce.number().positive({ message: 'Amount must be positive.' }),
   date: z.date({ required_error: 'A date is required.' }),
   category: z.enum(['Food', 'Travel', 'Shopping', 'Bills']),
@@ -36,12 +68,17 @@ type AddTransactionFormValues = z.infer<typeof formSchema>;
 
 interface AddTransactionFormProps {
   onSuccess?: () => void;
+  transaction?: Transaction | null;
 }
 
-export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
+export function AddTransactionForm({
+  onSuccess,
+  transaction,
+}: AddTransactionFormProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isEditMode = !!transaction;
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -64,9 +101,11 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
   }, [user, firestore]);
 
   const { data: userData } = useDoc<UserData>(userDocRef);
-  const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
+  const { data: transactionsData } =
+    useCollection<Transaction>(transactionsQuery);
   const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
-  const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
+  const { data: savingsGoalsData } =
+    useCollection<SavingsGoal>(savingsGoalsQuery);
 
   const form = useForm<AddTransactionFormValues>({
     resolver: zodResolver(formSchema),
@@ -77,15 +116,44 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
     },
   });
 
+  useEffect(() => {
+    if (isEditMode && transaction) {
+      form.reset({
+        description: transaction.description,
+        amount: transaction.amount,
+        date: new Date(transaction.date),
+        category: transaction.category,
+      });
+    } else {
+        form.reset({
+            description: '',
+            amount: '' as any,
+            date: new Date(),
+            category: undefined
+        });
+    }
+  }, [transaction, isEditMode, form]);
+
   const { isSubmitting } = form.formState;
 
   const triggerAlertCheck = async (newTransaction: Omit<Transaction, 'id'>) => {
-    if (!user || !firestore || !userData || !userData.smartReminders || !transactionsData || !budgetsData || !savingsGoalsData) {
+    if (
+      !user ||
+      !firestore ||
+      !userData ||
+      !userData.smartReminders ||
+      !transactionsData ||
+      !budgetsData ||
+      !savingsGoalsData
+    ) {
       return;
     }
 
     try {
-      const updatedTransactions = [...transactionsData, { ...newTransaction, id: 'temp' }];
+      const updatedTransactions = [
+        ...transactionsData,
+        { ...newTransaction, id: 'temp' },
+      ];
 
       const alertSuggestions = await generateAlerts({
         userId: user.uid,
@@ -98,37 +166,42 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
       if (!alertSuggestions || alertSuggestions.length === 0) {
         return;
       }
-      
+
       const alertsCol = collection(firestore, `users/${user.uid}/alerts`);
 
       for (const suggestion of alertSuggestions) {
         if (suggestion.shouldCreate && suggestion.trigger) {
-           const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-           const recentAlertsQuery = query(
-             alertsCol,
-             where('trigger', '==', suggestion.trigger),
-             limit(1)
-           );
-           
-           const recentAlertsSnapshot = await getDocs(recentAlertsQuery);
+          const sevenDaysAgo = new Date(
+            Date.now() - 7 * 24 * 60 * 60 * 1000
+          );
+          const recentAlertsQuery = query(
+            alertsCol,
+            where('trigger', '==', suggestion.trigger),
+            limit(1)
+          );
 
-           if(recentAlertsSnapshot.empty || new Date(recentAlertsSnapshot.docs[0].data().timestamp) < sevenDaysAgo) {
-                const alertData: Omit<Alert, 'id'> = {
-                    userId: user.uid,
-                    type: suggestion.type!,
-                    message: suggestion.message!,
-                    trigger: suggestion.trigger,
-                    timestamp: new Date().toISOString(),
-                    isRead: false,
-                };
-                addDocumentNonBlocking(alertsCol, alertData);
-           }
+          const recentAlertsSnapshot = await getDocs(recentAlertsQuery);
+
+          if (
+            recentAlertsSnapshot.empty ||
+            new Date(recentAlertsSnapshot.docs[0].data().timestamp) <
+              sevenDaysAgo
+          ) {
+            const alertData: Omit<Alert, 'id'> = {
+              userId: user.uid,
+              type: suggestion.type!,
+              message: suggestion.message!,
+              trigger: suggestion.trigger,
+              timestamp: new Date().toISOString(),
+              isRead: false,
+            };
+            addDocumentNonBlocking(alertsCol, alertData);
+          }
         }
       }
-
     } catch (error) {
-      console.error("Failed to trigger smart reminder check:", error);
-       toast({
+      console.error('Failed to trigger smart reminder check:', error);
+      toast({
         variant: 'destructive',
         title: 'Smart Reminder Failed',
         description: 'Could not check for smart reminders due to an error.',
@@ -147,30 +220,41 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
     }
 
     try {
-      const transactionsCol = collection(firestore, `users/${user.uid}/transactions`);
       const transactionData: Omit<Transaction, 'id'> = {
         ...values,
         date: values.date.toISOString(),
         userId: user.uid,
       };
-      addDocumentNonBlocking(transactionsCol, transactionData);
 
-      toast({
-        title: 'Transaction Added!',
-        description: `Transaction for ${values.description} has been successfully added.`,
-      });
-      
-      // Trigger the AI check non-blockingly
-      triggerAlertCheck(transactionData);
+      if (isEditMode && transaction) {
+        const transactionRef = doc(firestore, `users/${user.uid}/transactions/${transaction.id}`);
+        updateDocumentNonBlocking(transactionRef, transactionData);
+         toast({
+          title: 'Transaction Updated!',
+          description: `Transaction for ${values.description} has been successfully updated.`,
+        });
+      } else {
+        const transactionsCol = collection(
+          firestore,
+          `users/${user.uid}/transactions`
+        );
+        addDocumentNonBlocking(transactionsCol, transactionData);
+        toast({
+          title: 'Transaction Added!',
+          description: `Transaction for ${values.description} has been successfully added.`,
+        });
+        triggerAlertCheck(transactionData);
+      }
 
       form.reset();
       onSuccess?.();
     } catch (error) {
-      console.error('Error adding document: ', error);
+      console.error('Error adding/updating document: ', error);
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: 'There was a problem saving your transaction. Please try again.',
+        description:
+          'There was a problem saving your transaction. Please try again.',
       });
     }
   }
@@ -193,44 +277,48 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
         />
 
         <div className="grid grid-cols-2 gap-4">
-            <FormField
+          <FormField
             control={form.control}
             name="amount"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="5.75" {...field} />
+                  <Input type="number" placeholder="5.75" {...field} />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
-            <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="Food">Food</SelectItem>
-                        <SelectItem value="Travel">Travel</SelectItem>
-                        <SelectItem value="Shopping">Shopping</SelectItem>
-                        <SelectItem value="Bills">Bills</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            />
+          />
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Food">Food</SelectItem>
+                    <SelectItem value="Travel">Travel</SelectItem>
+                    <SelectItem value="Shopping">Shopping</SelectItem>
+                    <SelectItem value="Bills">Bills</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-        
+
         <FormField
           control={form.control}
           name="date"
@@ -241,14 +329,14 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
-                      variant={"outline"}
+                      variant={'outline'}
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
+                        'w-full pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
                       )}
                     >
                       {field.value ? (
-                        format(field.value, "PPP")
+                        format(field.value, 'PPP')
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -262,7 +350,7 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
+                      date > new Date() || date < new Date('1900-01-01')
                     }
                     initialFocus
                   />
@@ -272,10 +360,10 @@ export function AddTransactionForm({ onSuccess }: AddTransactionFormProps) {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" disabled={isSubmitting} className="w-full">
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Add Transaction
+          {isEditMode ? 'Save Changes' : 'Add Transaction'}
         </Button>
       </form>
     </Form>

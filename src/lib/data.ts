@@ -7,7 +7,7 @@ export type Transaction = {
   date: string;
   amount: number;
   description: string;
-  category?: 'Food' | 'Travel' | 'Shopping' | 'Bills';
+  category: 'Food' | 'Travel' | 'Shopping' | 'Bills';
 };
 
 export type Budget = {
@@ -15,8 +15,9 @@ export type Budget = {
     userId: string;
     name: string;
     amount: number;
-    startDate?: string;
-    endDate?: string;
+    startDate: string;
+    endDate: string;
+    category: 'Food' | 'Travel' | 'Shopping' | 'Bills' | 'Overall';
 };
 
 export type SavingsGoal = {

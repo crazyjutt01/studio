@@ -26,7 +26,7 @@ const menuItems = [
 ];
 
 const secondaryMenuItems = [
-    { href: '#', icon: LifeBuoy, label: 'Help & Support' },
+    { href: '/help-support', icon: LifeBuoy, label: 'Help & Support' },
     { href: '/crisis-guardian', icon: ShieldAlert, label: 'CrisisGuardian' },
     { href: '/settings', icon: Settings, label: 'Settings' },
 ]
