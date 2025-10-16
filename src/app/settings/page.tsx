@@ -22,6 +22,8 @@ import { Loader2, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -29,6 +31,8 @@ const profileFormSchema = z.object({
   monthlyIncome: z.coerce.number().positive('Monthly income must be a positive number'),
   assets: z.coerce.number().min(0, 'Assets cannot be negative'),
   smartReminders: z.boolean().default(false),
+  dailyDigest: z.boolean().default(false),
+  digestTime: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -53,6 +57,8 @@ export default function SettingsPage() {
       monthlyIncome: 0,
       assets: 0,
       smartReminders: false,
+      dailyDigest: false,
+      digestTime: '08:00',
     },
   });
 
@@ -64,6 +70,8 @@ export default function SettingsPage() {
         monthlyIncome: userData.monthlyIncome,
         assets: userData.assets || 0,
         smartReminders: userData.smartReminders || false,
+        dailyDigest: userData.dailyDigest || false,
+        digestTime: userData.digestTime || '08:00',
       });
     }
   }, [userData, form]);
@@ -94,6 +102,10 @@ export default function SettingsPage() {
       });
     }
   }
+  const timeOptions = Array.from({ length: 24 }, (_, i) => {
+    const hour = i.toString().padStart(2, '0');
+    return `${hour}:00`;
+  });
 
   return (
     <>
@@ -178,11 +190,14 @@ export default function SettingsPage() {
                                 </>
                             )}
                         </CardContent>
-                        <CardHeader>
+                        
+                        <Separator className="my-6" />
+
+                        <CardHeader className="-mt-6">
                             <CardTitle>Notifications</CardTitle>
                             <CardDescription>Manage how you receive alerts from FinSafe.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-4">
                              <FormField
                                 control={form.control}
                                 name="smartReminders"
@@ -202,6 +217,54 @@ export default function SettingsPage() {
                                         onCheckedChange={field.onChange}
                                     />
                                     </FormControl>
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="dailyDigest"
+                                render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base">
+                                            Daily Digest
+                                        </FormLabel>
+                                        <p className="text-sm text-muted-foreground">
+                                            Get a summary of your financial activity every day.
+                                        </p>
+                                    </div>
+                                    <FormControl>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                    </FormControl>
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="digestTime"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Daily Digest Time</FormLabel>
+                                    <Select 
+                                        onValueChange={field.onChange} 
+                                        defaultValue={field.value}
+                                        disabled={!form.watch('dailyDigest')}
+                                    >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select a time" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {timeOptions.map(time => (
+                                            <SelectItem key={time} value={time}>{time}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                    </Select>
+                                    <FormMessage />
                                 </FormItem>
                                 )}
                             />

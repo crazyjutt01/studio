@@ -6,7 +6,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { LifeBuoy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LifeBuoy, Mail, Users } from 'lucide-react';
 
 const faqs = [
     {
@@ -35,6 +37,12 @@ const faqs = [
     },
   ];
 
+const developers = [
+    { name: 'Alice Johnson', role: 'Lead Frontend Developer' },
+    { name: 'Bob Williams', role: 'Backend & AI Specialist' },
+    { name: 'Charlie Brown', role: 'UI/UX Designer' },
+]
+
 export default function HelpSupportPage() {
   return (
     <>
@@ -46,19 +54,56 @@ export default function HelpSupportPage() {
             Help & Support
           </h1>
         </div>
-        <div className="flex justify-center">
-          <div className="w-full max-w-4xl">
-            <Accordion type="single" collapsible className="w-full">
-              {faqs.map((faq, index) => (
-                <AccordionItem value={`item-${index}`} key={index}>
-                  <AccordionTrigger>{faq.question}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle>Frequently Asked Questions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Accordion type="single" collapsible className="w-full">
+                    {faqs.map((faq, index) => (
+                        <AccordionItem value={`item-${index}`} key={index}>
+                        <AccordionTrigger>{faq.question}</AccordionTrigger>
+                        <AccordionContent className="text-muted-foreground">
+                            {faq.answer}
+                        </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                    </Accordion>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Mail className="h-5 w-5" />
+                        Contact Us
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground mb-4">Have questions or feedback? We'd love to hear from you. Reach out to our support team.</p>
+                    <Button asChild>
+                        <a href="mailto:support@finsafe.app">Email Support</a>
+                    </Button>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        Meet the Developers
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ul className="space-y-3">
+                        {developers.map(dev => (
+                            <li key={dev.name} className="flex flex-col">
+                                <span className="font-semibold">{dev.name}</span>
+                                <span className="text-sm text-muted-foreground">{dev.role}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </CardContent>
+            </Card>
         </div>
       </main>
     </>

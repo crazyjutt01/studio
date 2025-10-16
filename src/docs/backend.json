@@ -30,6 +30,14 @@
         "smartReminders": {
           "type": "boolean",
           "description": "Whether the user has enabled smart reminders."
+        },
+        "dailyDigest": {
+          "type": "boolean",
+          "description": "Whether the user has enabled daily digest notifications."
+        },
+        "digestTime": {
+          "type": "string",
+          "description": "The time of day the user wants to receive their daily digest."
         }
       },
       "required": [

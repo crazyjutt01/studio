@@ -47,6 +47,8 @@ export type UserData = {
   savingGoals: string;
   assets: number;
   smartReminders?: boolean;
+  dailyDigest?: boolean;
+  digestTime?: string;
 };
 
 export type Alert = {
