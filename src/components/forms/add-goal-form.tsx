@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '../ui/calendar';
 import { useEffect } from 'react';
+import { useGamification } from '@/hooks/use-gamification';
 
 const formSchema = z.object({
   name: z
@@ -50,6 +51,7 @@ export function AddGoalForm({ onSuccess, goal }: AddGoalFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const isEditMode = !!goal;
+  const { awardXP } = useGamification();
 
   const form = useForm<AddGoalFormValues>({
     resolver: zodResolver(formSchema),
@@ -108,10 +110,7 @@ export function AddGoalForm({ onSuccess, goal }: AddGoalFormProps) {
         } else {
             const goalsCol = collection(firestore, `users/${user.uid}/savingGoals`);
             addDocumentNonBlocking(goalsCol, goalData);
-            toast({
-                title: 'Goal Added!',
-                description: `Your goal "${values.name}" has been successfully added.`,
-            });
+            awardXP('add_goal');
         }
 
       form.reset();

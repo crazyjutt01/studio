@@ -14,6 +14,7 @@ import {
   Settings,
   ShieldAlert,
   Target,
+  Trophy
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -23,6 +24,7 @@ const menuItems = [
   { href: '/budget-bot', icon: CircleDollarSign, label: 'BudgetBot' },
   { href: '/goal-guru', icon: Target, label: 'GoalGuru' },
   { href: '/advisor-ai', icon: BotMessageSquare, label: 'AdvisorAI' },
+  { href: '/gamification', icon: Trophy, label: 'Gamification' },
 ];
 
 const secondaryMenuItems = [

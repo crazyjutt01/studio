@@ -52,10 +52,12 @@ import { useCurrency } from '@/hooks/use-currency';
 
 interface RecentTransactionsCardProps {
   transactions: Transaction[] | null;
+  onTransactionAdded?: () => void;
 }
 
 export function RecentTransactionsCard({
   transactions,
+  onTransactionAdded,
 }: RecentTransactionsCardProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -85,6 +87,11 @@ export function RecentTransactionsCard({
     deleteDocumentNonBlocking(transactionRef);
     setIsDeleteDialogOpen(false);
     setSelectedTransaction(null);
+  };
+  
+  const handleSuccess = () => {
+    setIsAddDialogOpen(false);
+    onTransactionAdded?.();
   };
 
   return (
@@ -203,7 +210,7 @@ export function RecentTransactionsCard({
         <DialogHeader>
           <DialogTitle>Add a New Transaction</DialogTitle>
         </DialogHeader>
-        <AddTransactionForm onSuccess={() => setIsAddDialogOpen(false)} />
+        <AddTransactionForm onSuccess={handleSuccess} />
       </DialogContent>
       
       {/* Edit Dialog - This is separate because it's controlled by a different state */}

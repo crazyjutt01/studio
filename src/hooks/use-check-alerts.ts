@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useCallback } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, addDocumentNonBlocking } from '@/firebase';
@@ -46,6 +46,8 @@ export function useCheckAlerts() {
           budgets: JSON.stringify(budgetsData),
           goals: JSON.stringify(savingsGoalsData),
           monthlyIncome: userData.monthlyIncome,
+          currency: userData.currency || 'USD',
+          region: userData.region || 'US',
         });
 
         if (!alertSuggestions || alertSuggestions.length === 0) {

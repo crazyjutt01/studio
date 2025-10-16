@@ -1,6 +1,6 @@
 'use client';
 import type { LucideIcon } from 'lucide-react';
-import { Landmark, MoreHorizontal, Plane, ShoppingCart, UtensilsCrossed } from 'lucide-react';
+import { Landmark, MoreHorizontal, Plane, ShoppingCart, UtensilsCrossed, Trophy } from 'lucide-react';
 
 export type Transaction = {
   id: string;
@@ -52,6 +52,11 @@ export type UserData = {
   digestTime?: string;
   region?: string;
   currency?: string;
+  xp?: number;
+  level?: number;
+  coins?: number;
+  streak?: number;
+  badges?: string[];
 };
 
 export type Alert = {
@@ -68,6 +73,21 @@ export type CategoryData = {
   name: string;
   total: number;
 };
+
+export type BadgeInfo = {
+    id: string;
+    name: string;
+    description: string;
+    icon: LucideIcon;
+    xpThreshold: number;
+  };
+  
+  export const badges: BadgeInfo[] = [
+    { id: 'first-transaction', name: 'First Step', description: 'Added your first transaction.', icon: Trophy, xpThreshold: 10 },
+    { id: 'first-budget', name: 'Budget Beginner', description: 'Created your first budget.', icon: Trophy, xpThreshold: 25 },
+    { id: 'first-goal', name: 'Goal Setter', description: 'Set your first savings goal.', icon: Trophy, xpThreshold: 50 },
+    { id: 'level-5', name: 'Level 5', description: 'Reached level 5.', icon: Trophy, xpThreshold: 500 },
+  ];
 
 export const getWeeklySpendingForAI = (transactions: Transaction[]) => {
     const categoryMap: { [key: string]: number } = {
@@ -98,7 +118,7 @@ export const getExpensesForAI = (transactions: Transaction[]) => {
     Others: 0,
   };
   transactions.forEach(transaction => {
-      if (transaction.category && categoryMap[transaction.category]) {
+      if (transaction.category && Object.prototype.hasOwnProperty.call(categoryMap, transaction.category)) {
           categoryMap[transaction.category] += transaction.amount;
       }
   });

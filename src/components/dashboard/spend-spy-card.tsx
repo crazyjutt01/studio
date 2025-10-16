@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,6 +18,7 @@ import { useFirestore, useUser, addDocumentNonBlocking, useDoc, useMemoFirebase 
 import { collection, doc } from 'firebase/firestore';
 import type { Transaction, UserData } from '@/lib/data';
 import { useCurrency } from '@/hooks/use-currency';
+import { useGamification } from '@/hooks/use-gamification';
 
 export function SpendSpyCard() {
   const [isDragging, setIsDragging] = useState(false);
@@ -31,6 +31,7 @@ export function SpendSpyCard() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { currencySymbol } = useCurrency();
+  const { awardXP } = useGamification();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -73,6 +74,7 @@ export function SpendSpyCard() {
             };
             const transactionsCol = collection(firestore, `users/${user.uid}/transactions`);
             addDocumentNonBlocking(transactionsCol, transactionData);
+            awardXP('add_transaction');
              toast({
                 title: 'Expense Recorded',
                 description: `${output.expenseDetails.merchant} for ${currencySymbol}${output.expenseDetails.amount} has been added.`,

@@ -54,6 +54,7 @@ import {
 } from '../ui/select';
 import { generateAlerts } from '@/ai/flows/alert-generator';
 import { useEffect } from 'react';
+import { useGamification } from '@/hooks/use-gamification';
 
 const formSchema = z.object({
   description: z
@@ -79,6 +80,7 @@ export function AddTransactionForm({
   const firestore = useFirestore();
   const { toast } = useToast();
   const isEditMode = !!transaction;
+  const { awardXP } = useGamification();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -161,6 +163,8 @@ export function AddTransactionForm({
         budgets: JSON.stringify(budgetsData),
         goals: JSON.stringify(savingsGoalsData),
         monthlyIncome: userData.monthlyIncome,
+        currency: userData.currency || 'USD',
+        region: userData.region || 'US',
       });
 
       if (!alertSuggestions || alertSuggestions.length === 0) {
@@ -239,10 +243,7 @@ export function AddTransactionForm({
           `users/${user.uid}/transactions`
         );
         addDocumentNonBlocking(transactionsCol, transactionData);
-        toast({
-          title: 'Transaction Added!',
-          description: `Transaction for ${values.description} has been successfully added.`,
-        });
+        awardXP('add_transaction');
         triggerAlertCheck(transactionData);
       }
 

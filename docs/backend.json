@@ -46,6 +46,29 @@
         "currency": {
             "type": "string",
             "description": "The user's selected currency (e.g., 'USD', 'GBP')."
+        },
+        "xp": {
+            "type": "number",
+            "description": "The user's experience points for gamification."
+        },
+        "level": {
+            "type": "number",
+            "description": "The user's current level in the gamification system."
+        },
+        "coins": {
+            "type": "number",
+            "description": "The user's in-app currency."
+        },
+        "streak": {
+            "type": "number",
+            "description": "The user's current daily login streak."
+        },
+        "badges": {
+            "type": "array",
+            "description": "A list of badges the user has earned.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [

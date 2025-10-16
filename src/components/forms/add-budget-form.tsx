@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { useEffect } from 'react';
+import { useGamification } from '@/hooks/use-gamification';
 
 const formSchema = z.object({
   name: z
@@ -59,6 +60,7 @@ export function AddBudgetForm({ onSuccess, budget }: AddBudgetFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const isEditMode = !!budget;
+  const { awardXP } = useGamification();
 
   const form = useForm<AddBudgetFormValues>({
     resolver: zodResolver(formSchema),
@@ -124,10 +126,7 @@ export function AddBudgetForm({ onSuccess, budget }: AddBudgetFormProps) {
       } else {
         const budgetsCol = collection(firestore, `users/${user.uid}/budgets`);
         addDocumentNonBlocking(budgetsCol, budgetData);
-        toast({
-          title: 'Budget Added!',
-          description: `Your budget "${values.name}" has been successfully added.`,
-        });
+        awardXP('add_budget');
       }
 
       form.reset();
