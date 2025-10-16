@@ -6,8 +6,9 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, Shield, Coins, Flame } from 'lucide-react';
+import { Trophy, Coins, Flame } from 'lucide-react';
 import { AchievementsCard } from '@/components/dashboard/achievements-card';
+import { cn } from '@/lib/utils';
 
 export default function GamificationPage() {
   const { user } = useUser();
@@ -51,16 +52,40 @@ export default function GamificationPage() {
                 ) : (
                   <div className="space-y-4 text-center">
                     <div className="relative inline-block">
-                        <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center">
-                            <div className="w-28 h-28 rounded-full bg-background flex items-center justify-center text-4xl font-bold">
-                                {level}
+                        <div className="relative w-40 h-40">
+                            <svg className="w-full h-full" viewBox="0 0 100 100">
+                                <circle
+                                className="text-muted"
+                                strokeWidth="8"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="42"
+                                cx="50"
+                                cy="50"
+                                />
+                                <circle
+                                className="text-primary"
+                                strokeWidth="8"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="42"
+                                cx="50"
+                                cy="50"
+                                strokeDasharray={2 * Math.PI * 42}
+                                strokeDashoffset={2 * Math.PI * 42 * (1 - progress / 100)}
+                                transform="rotate(-90 50 50)"
+                                style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <Trophy className="w-8 h-8 text-yellow-400" />
+                                <span className="text-4xl font-bold">{level}</span>
+                                <span className="text-xs text-muted-foreground">Level</span>
                             </div>
                         </div>
-                        <Shield className="w-16 h-16 absolute -top-4 -left-4 text-yellow-400" fill="currentColor" />
                     </div>
                     <div>
-                        <Progress value={progress} className="h-3" />
-                        <p className="text-sm text-muted-foreground mt-2">{xp} / {xpForNextLevel} XP</p>
+                        <p className="text-sm font-semibold mt-2">{xp} / {xpForNextLevel} XP</p>
                     </div>
                     <div className="flex justify-center items-center gap-6 text-lg font-semibold pt-4">
                         <div className="flex items-center gap-2">
@@ -84,5 +109,3 @@ export default function GamificationPage() {
     </>
   );
 }
-
-    

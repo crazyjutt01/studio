@@ -96,7 +96,7 @@ export function RecentTransactionsCard({
 
   return (
     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-      <Card className="col-span-1 lg:col-span-2">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Recent Transactions</CardTitle>

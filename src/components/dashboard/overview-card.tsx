@@ -23,23 +23,23 @@ const chartConfig = {
   spending: {
     label: 'Spending',
   },
-  food: {
+  Food: {
     label: 'Food',
     color: 'hsl(var(--chart-1))',
   },
-  travel: {
+  Travel: {
     label: 'Travel',
     color: 'hsl(var(--chart-2))',
   },
-  shopping: {
+  Shopping: {
     label: 'Shopping',
     color: 'hsl(var(--chart-3))',
   },
-  bills: {
+  Bills: {
     label: 'Bills',
     color: 'hsl(var(--chart-4))',
   },
-  others: {
+  Others: {
     label: 'Others',
     color: 'hsl(var(--chart-5))',
   },
@@ -60,7 +60,7 @@ export function OverviewCard({ categoryData, totalSpending, userData }: Overview
 
 
   return (
-    <Card className="col-span-1 lg:col-span-2">
+    <Card>
       <CardHeader>
         <CardTitle>Monthly Overview</CardTitle>
         <CardDescription>Your financial summary for this month.</CardDescription>
@@ -139,7 +139,7 @@ export function OverviewCard({ categoryData, totalSpending, userData }: Overview
                       <Bar
                         key={entry.category}
                         dataKey="spending"
-                        fill={chartConfig[entry.category.toLowerCase() as keyof typeof chartConfig]?.color || 'hsl(var(--primary))'}
+                        fill={chartConfig[entry.category as keyof typeof chartConfig]?.color || 'hsl(var(--primary))'}
                       />
                     ))}
                 </Bar>

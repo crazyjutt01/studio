@@ -13,6 +13,8 @@ import { useCheckAlerts } from '@/hooks/use-check-alerts';
 import { Progress } from '@/components/ui/progress';
 import { LevelUp } from '@/components/level-up';
 import { useGamification } from '@/hooks/use-gamification';
+import { FinancialSummaryAgentCard } from '@/components/dashboard/financial-summary-agent-card';
+import { ChallengesCard } from '@/components/dashboard/challenges-card';
 
 const getCategoryData = (transactions: Transaction[] | null): CategoryData[] | null => {
   if (!transactions) return null;
@@ -55,14 +57,8 @@ export default function DashboardPage() {
     return query(collection(firestore, `users/${user.uid}/transactions`));
   }, [user, firestore]);
 
-  const budgetsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, `users/${user.uid}/budgets`));
-  }, [user, firestore]);
-
   const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
-  const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
 
   // Hook to check for alerts
   useCheckAlerts();
@@ -89,10 +85,20 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-          <OverviewCard categoryData={categoryData} totalSpending={totalSpending} userData={userData} />
-          <NetWorthCard />
-          <RecentTransactionsCard transactions={transactionsData} onTransactionAdded={() => awardXP('add_transaction')} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="md:col-span-2 lg:col-span-3">
+             <OverviewCard categoryData={categoryData} totalSpending={totalSpending} userData={userData} />
+          </div>
+          <div className="lg:col-span-1">
+            <NetWorthCard />
+          </div>
+           <div className="lg:col-span-2">
+             <RecentTransactionsCard transactions={transactionsData} onTransactionAdded={() => awardXP('add_transaction')} />
+          </div>
+          <div className="md:col-span-2 lg:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FinancialSummaryAgentCard />
+            <ChallengesCard />
+          </div>
         </div>
         {showLevelUp && levelUpInfo && (
             <LevelUp
