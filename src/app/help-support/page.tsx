@@ -7,8 +7,9 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LifeBuoy, Mail, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { LifeBuoy, Mail, Users, Star, Quote, Award } from 'lucide-react';
+import Image from 'next/image';
 
 const faqs = [
     {
@@ -38,10 +39,10 @@ const faqs = [
   ];
 
 const developers = [
-    { name: 'Alice Johnson', role: 'Lead Frontend Developer' },
-    { name: 'Bob Williams', role: 'Backend & AI Specialist' },
-    { name: 'Charlie Brown', role: 'UI/UX Designer' },
-]
+    { name: 'Mahyudeen Shahid', role: 'Developer & Team Lead', avatar: 'https://picsum.photos/seed/mah/100/100' },
+    { name: 'Shahzaib Javeed', role: 'Documentation', avatar: 'https://picsum.photos/seed/sha/100/100' },
+    { name: 'Syeda Hania Zahra', role: 'Presentation & Documentation', avatar: 'https://picsum.photos/seed/han/100/100' },
+];
 
 export default function HelpSupportPage() {
   return (
@@ -80,9 +81,9 @@ export default function HelpSupportPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground mb-4">Have questions or feedback? We'd love to hear from you. Reach out to our support team.</p>
+                    <p className="text-muted-foreground mb-4">Have questions, feedback, or need support? We'd love to hear from you. Reach out to our team lead directly.</p>
                     <Button asChild>
-                        <a href="mailto:support@finsafe.app">Email Support</a>
+                        <a href="mailto:mahyudeenjutt@gmail.com">Email Support</a>
                     </Button>
                 </CardContent>
             </Card>
@@ -90,18 +91,36 @@ export default function HelpSupportPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="h-5 w-5" />
-                        Meet the Developers
+                        Meet the Team
                     </CardTitle>
+                    <CardDescription>The talented developers behind FinSafe.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ul className="space-y-3">
+                    <div className="space-y-4">
                         {developers.map(dev => (
-                            <li key={dev.name} className="flex flex-col">
-                                <span className="font-semibold">{dev.name}</span>
-                                <span className="text-sm text-muted-foreground">{dev.role}</span>
-                            </li>
+                            <div key={dev.name} className="flex items-center gap-4">
+                                <Image 
+                                    src={dev.avatar}
+                                    alt={`Avatar of ${dev.name}`}
+                                    width={40}
+                                    height={40}
+                                    className="rounded-full"
+                                    data-ai-hint="person portrait"
+                                />
+                                <div>
+                                    <p className="font-semibold">{dev.name}</p>
+                                    <p className="text-sm text-muted-foreground">{dev.role}</p>
+                                </div>
+                                {dev.role.includes('Team Lead') && <Award className="h-5 w-5 text-yellow-500 ml-auto" />}
+                            </div>
                         ))}
-                    </ul>
+                    </div>
+                    <div className="mt-6 border-t pt-4">
+                        <blockquote className="flex items-start gap-3">
+                            <Quote className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
+                            <p className="text-sm italic text-muted-foreground">"Teamwork is the ability to work together toward a common vision. The ability to direct individual accomplishments toward organizational objectives. It is the fuel that allows common people to attain uncommon results."</p>
+                        </blockquote>
+                    </div>
                 </CardContent>
             </Card>
         </div>
