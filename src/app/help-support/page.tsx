@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LifeBuoy, Mail, Users, Star, Quote, Award } from 'lucide-react';
-import Image from 'next/image';
+import { User } from 'lucide-react';
 
 const faqs = [
     {
@@ -39,9 +39,9 @@ const faqs = [
   ];
 
 const developers = [
-    { name: 'Mahyudeen Shahid', role: 'Developer & Team Lead', avatar: 'https://picsum.photos/seed/mah/100/100' },
-    { name: 'Shahzaib Javeed', role: 'Documentation', avatar: 'https://picsum.photos/seed/sha/100/100' },
-    { name: 'Syeda Hania Zahra', role: 'Presentation & Documentation', avatar: 'https://picsum.photos/seed/han/100/100' },
+    { name: 'Mahyudeen Shahid', role: 'Developer & Team Lead' },
+    { name: 'Shahzaib Javeed', role: 'Documentation' },
+    { name: 'Syeda Hania Zahra', role: 'Presentation & Documentation' },
 ];
 
 export default function HelpSupportPage() {
@@ -99,14 +99,9 @@ export default function HelpSupportPage() {
                     <div className="space-y-4">
                         {developers.map(dev => (
                             <div key={dev.name} className="flex items-center gap-4">
-                                <Image 
-                                    src={dev.avatar}
-                                    alt={`Avatar of ${dev.name}`}
-                                    width={40}
-                                    height={40}
-                                    className="rounded-full"
-                                    data-ai-hint="person portrait"
-                                />
+                                <div className="p-2 bg-muted rounded-full">
+                                    <User className="h-6 w-6 text-muted-foreground" />
+                                </div>
                                 <div>
                                     <p className="font-semibold">{dev.name}</p>
                                     <p className="text-sm text-muted-foreground">{dev.role}</p>
