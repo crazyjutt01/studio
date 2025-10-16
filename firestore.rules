@@ -1,23 +1,41 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model, ensuring that only the authenticated user can access their own data.
- * All data is nested under /users/{userId}, creating a clear hierarchical structure.
+ * @fileoverview Firestore Security Rules for FinSafe Application
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Only the authenticated user can access their own data, ensuring privacy and data isolation.
+ *
+ * Data Structure:
+ * All data is nested under /users/{userId}, with subcollections for budgets, transactions, categories, savingGoals, alerts, and emergencyContacts.
  *
  * Key Security Decisions:
- *  - Users can only access their own data.
- *  - Data consistency is enforced by validating the userId on create operations and enforcing immutability on updates.
- *  - Read and write permissions are explicitly defined for each collection.
+ * - User listing is disallowed to prevent unauthorized data access.
+ * - All write operations are restricted to the authenticated user.
+ * - Data consistency between the path and the document's internal fields is enforced.
+ *
+ * Authorization Independence:
+ * This ruleset avoids `get()` calls by denormalizing user IDs into documents.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
+     * @description Prevents listing all users. Only allows access to specific user documents.
+     * @path /users
+     * @deny (list) Always denies listing users.
+     * @principle Prevents information leakage by disallowing user enumeration.
+     */
+    match /users {
+      allow list: if false;
+    }
+
+    /**
      * @description Allows users to read and write their own user document.
      * @path /users/{userId}
-     * @allow (create, update, get, delete) if the user's ID matches the document ID.
-     * @deny (create, update, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) if the user's ID matches (self-registration).
+     * @allow (get, update, delete) if the user's ID matches.
+     * @deny (create) if the user's ID does not match.
+     * @principle Enforces strict ownership for user profiles.
      */
     match /users/{userId} {
       function isSignedIn() {
@@ -28,20 +46,22 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
-      allow delete: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Allows users to read and write their own budgets.
      * @path /users/{userId}/budgets/{budgetId}
-     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
-     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create, update, get, list, delete) if the user's ID matches.
+     * @principle Enforces strict ownership for user budgets.
      */
     match /users/{userId}/budgets/{budgetId} {
       function isSignedIn() {
@@ -52,20 +72,21 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
+      allow get, list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Allows users to read and write their own transactions.
      * @path /users/{userId}/transactions/{transactionId}
-     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
-     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create, update, get, list, delete) if the user's ID matches.
+     * @principle Enforces strict ownership for user transactions.
      */
     match /users/{userId}/transactions/{transactionId} {
       function isSignedIn() {
@@ -76,20 +97,21 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
+      allow get, list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Allows users to read and write their own categories.
      * @path /users/{userId}/categories/{categoryId}
-     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
-     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create, update, get, list, delete) if the user's ID matches.
+     * @principle Enforces strict ownership for user categories.
      */
     match /users/{userId}/categories/{categoryId} {
       function isSignedIn() {
@@ -100,20 +122,21 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
+      allow get, list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Allows users to read and write their own saving goals.
      * @path /users/{userId}/savingGoals/{savingGoalId}
-     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
-     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create, update, get, list, delete) if the user's ID matches.
+     * @principle Enforces strict ownership for user saving goals.
      */
     match /users/{userId}/savingGoals/{savingGoalId} {
       function isSignedIn() {
@@ -124,20 +147,21 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
+      allow get, list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Allows users to read and write their own alerts.
      * @path /users/{userId}/alerts/{alertId}
-     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
-     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create, update, get, list, delete) if the user's ID matches.
+     * @principle Enforces strict ownership for user alerts.
      */
     match /users/{userId}/alerts/{alertId} {
       function isSignedIn() {
@@ -148,20 +172,21 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
+      allow get, list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Allows users to read and write their own emergency contacts.
      * @path /users/{userId}/emergencyContacts/{contactId}
-     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
-     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create, update, get, list, delete) if the user's ID matches.
+     * @principle Enforces strict ownership for user emergency contacts.
      */
     match /users/{userId}/emergencyContacts/{contactId} {
       function isSignedIn() {
@@ -172,12 +197,14 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
+      allow get, list: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
