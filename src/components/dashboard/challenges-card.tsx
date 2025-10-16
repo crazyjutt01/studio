@@ -3,13 +3,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { getChallengeTip } from '@/ai/flows/get-challenge-tip';
 import { Loader2, Award, HelpCircle, Check, Sparkles } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, doc, where, getDocs, Timestamp, writeBatch } from 'firebase/firestore';
 import type { UserData, Challenge, Transaction, Budget } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
-import { endOfDay, startOfDay } from 'date-fns';
+import { endOfDay, startOfDay, isAfter } from 'date-fns';
 import { useGamification } from '@/hooks/use-gamification';
 import {
     Dialog,
@@ -101,15 +100,9 @@ export function ChallengesCard() {
     const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
     const today = startOfDay(new Date());
 
-    const q = query(
-        challengesCol,
-        where('type', '==', 'daily'),
-        where('expiresAt', '>=', Timestamp.fromDate(today))
-    );
+    const dailyChallengesExist = allChallenges?.some(c => c.type === 'daily' && isAfter(c.expiresAt.toDate(), today));
 
-    const dailySnapshot = await getDocs(q);
-
-    if (dailySnapshot.empty) {
+    if (!dailyChallengesExist) {
         const batch = writeBatch(firestore);
         defaultDailyChallenges.forEach(challengeDef => {
             const newChallengeRef = doc(challengesCol);
@@ -130,7 +123,7 @@ export function ChallengesCard() {
     
     setIsLoading(false);
 
-  }, [user, firestore, userData]);
+  }, [user, firestore, userData, allChallenges]);
 
 
   useEffect(() => {
@@ -176,7 +169,7 @@ export function ChallengesCard() {
 
   const handleClaimReward = (challenge: Challenge) => {
     if (!user || !firestore || !challenge.id) return;
-    const challengeRef = doc(firestore, `users/${user.uid}/challenges/${challenge.id}`);
+    const challengeRef = doc(firestore, `users/${user.uid}/challenges`, challenge.id);
     updateDocumentNonBlocking(challengeRef, { status: 'completed', isCompleted: true });
     
     awardXP('add_goal', challenge.xp);
@@ -298,5 +291,3 @@ export function ChallengesCard() {
     </>
   );
 }
-
-    
