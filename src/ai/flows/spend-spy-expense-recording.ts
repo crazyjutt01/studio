@@ -48,7 +48,7 @@ const recordExpensePrompt = ai.definePrompt({
   - Date: The date of the expense (YYYY-MM-DD).
   - Merchant: The name of the merchant.
   - Amount: The total amount of the expense.
-  - Category: The category of the expense (e.g., food, travel, shopping).
+  - Category: The category of the expense. You MUST choose one of the following categories: Food, Travel, Shopping, Bills, Others.
   - Description: Concisely describe the expense, incorporating any provided description.
 
   Return the extracted information in JSON format, matching the schema.

@@ -39,6 +39,10 @@ const chartConfig = {
     label: 'Bills',
     color: 'hsl(var(--chart-4))',
   },
+  others: {
+    label: 'Others',
+    color: 'hsl(var(--chart-5))',
+  },
 };
 
 export function OverviewCard({ categoryData, totalSpending, userData }: OverviewCardProps) {

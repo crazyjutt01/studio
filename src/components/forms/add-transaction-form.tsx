@@ -61,7 +61,7 @@ const formSchema = z.object({
     .min(2, { message: 'Description must be at least 2 characters.' }),
   amount: z.coerce.number().positive({ message: 'Amount must be positive.' }),
   date: z.date({ required_error: 'A date is required.' }),
-  category: z.enum(['Food', 'Travel', 'Shopping', 'Bills']),
+  category: z.enum(['Food', 'Travel', 'Shopping', 'Bills', 'Others']),
 });
 
 type AddTransactionFormValues = z.infer<typeof formSchema>;
@@ -311,6 +311,7 @@ export function AddTransactionForm({
                     <SelectItem value="Travel">Travel</SelectItem>
                     <SelectItem value="Shopping">Shopping</SelectItem>
                     <SelectItem value="Bills">Bills</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

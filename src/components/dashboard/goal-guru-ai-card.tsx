@@ -22,6 +22,7 @@ const getExpensesForAI = (transactions: Transaction[]) => {
     Travel: 0,
     Shopping: 0,
     Bills: 0,
+    Others: 0,
   };
   transactions.forEach(transaction => {
       if (transaction.category && Object.prototype.hasOwnProperty.call(categoryMap, transaction.category)) {

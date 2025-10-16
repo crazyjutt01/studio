@@ -19,6 +19,7 @@ const getCategoryData = (transactions: Transaction[] | null): CategoryData[] | n
     Travel: 0,
     Shopping: 0,
     Bills: 0,
+    Others: 0,
   };
 
   transactions.forEach(transaction => {

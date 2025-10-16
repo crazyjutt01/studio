@@ -44,7 +44,7 @@ const formSchema = z.object({
   amount: z.coerce.number().positive({ message: 'Amount must be positive.' }),
   startDate: z.date({ required_error: 'A start date is required.' }),
   endDate: z.date({ required_error: 'An end date is required.' }),
-  category: z.enum(['Food', 'Travel', 'Shopping', 'Bills', 'Overall']),
+  category: z.enum(['Food', 'Travel', 'Shopping', 'Bills', 'Overall', 'Others']),
 });
 
 type AddBudgetFormValues = z.infer<typeof formSchema>;
@@ -195,6 +195,7 @@ export function AddBudgetForm({ onSuccess, budget }: AddBudgetFormProps) {
                     <SelectItem value="Travel">Travel</SelectItem>
                     <SelectItem value="Shopping">Shopping</SelectItem>
                     <SelectItem value="Bills">Bills</SelectItem>
+                    <SelectItem value="Others">Others</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

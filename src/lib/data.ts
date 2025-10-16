@@ -1,6 +1,6 @@
 'use client';
 import type { LucideIcon } from 'lucide-react';
-import { Landmark, Plane, ShoppingCart, UtensilsCrossed } from 'lucide-react';
+import { Landmark, MoreHorizontal, Plane, ShoppingCart, UtensilsCrossed } from 'lucide-react';
 
 export type Transaction = {
   id: string;
@@ -8,7 +8,7 @@ export type Transaction = {
   date: string;
   amount: number;
   description: string;
-  category: 'Food' | 'Travel' | 'Shopping' | 'Bills';
+  category: 'Food' | 'Travel' | 'Shopping' | 'Bills' | 'Others';
 };
 
 export type Budget = {
@@ -18,7 +18,7 @@ export type Budget = {
     amount: number;
     startDate: string;
     endDate: string;
-    category: 'Food' | 'Travel' | 'Shopping' | 'Bills' | 'Overall';
+    category: 'Food' | 'Travel' | 'Shopping' | 'Bills' | 'Overall' | 'Others';
 };
 
 export type SavingsGoal = {
@@ -75,6 +75,7 @@ export const getWeeklySpendingForAI = (transactions: Transaction[]) => {
         Travel: 0,
         Shopping: 0,
         Bills: 0,
+        Others: 0,
     };
     transactions.forEach(transaction => {
         if (transaction.category && categoryMap[transaction.category]) {
@@ -94,6 +95,7 @@ export const getExpensesForAI = (transactions: Transaction[]) => {
     Travel: 0,
     Shopping: 0,
     Bills: 0,
+    Others: 0,
   };
   transactions.forEach(transaction => {
       if (transaction.category && categoryMap[transaction.category]) {
@@ -114,7 +116,8 @@ export const categoryIcons: CategoryIcons = {
   Food: UtensilsCrossed,
   Travel: Plane,
   Shopping: ShoppingCart,
-  Bills: Landmark
+  Bills: Landmark,
+  Others: MoreHorizontal
 };
 
 export const regions = [
