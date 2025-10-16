@@ -53,7 +53,6 @@ export function ChallengesCard() {
   }, [user, firestore]);
 
   const { data: userData } = useDoc<UserData>(userDocRef);
-  const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
   const { data: existingChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
 
   const fetchAndSetChallenges = async () => {
@@ -93,17 +92,17 @@ export function ChallengesCard() {
       if (result.daily && !hasDaily) {
         const dailyChallenge: Omit<Challenge, 'id'> = { ...result.daily, type: 'daily', isCompleted: false, expiresAt: Timestamp.fromDate(endOfDay(now)) };
         addDocumentNonBlocking(challengesCol, dailyChallenge);
-        newChallenges.push(dailyChallenge as Challenge);
+        newChallenges.push({ ...dailyChallenge, id: `temp-${Math.random()}` } as Challenge);
       }
       if (result.weekly && !hasWeekly) {
         const weeklyChallenge: Omit<Challenge, 'id'> = { ...result.weekly, type: 'weekly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
         addDocumentNonBlocking(challengesCol, weeklyChallenge);
-        newChallenges.push(weeklyChallenge as Challenge);
+        newChallenges.push({ ...weeklyChallenge, id: `temp-${Math.random()}` } as Challenge);
       }
       if (result.monthly && !hasMonthly) {
         const monthlyChallenge: Omit<Challenge, 'id'> = { ...result.monthly, type: 'monthly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
         addDocumentNonBlocking(challengesCol, monthlyChallenge);
-        newChallenges.push(monthlyChallenge as Challenge);
+        newChallenges.push({ ...monthlyChallenge, id: `temp-${Math.random()}` } as Challenge);
       }
       
       // We can't know the ID from non-blocking add, so we'll rely on the next fetch
@@ -128,7 +127,7 @@ export function ChallengesCard() {
   }, [areChallengesLoading, userData, savingsGoalsData]);
 
   const handleCompleteChallenge = (challenge: Challenge) => {
-    if (!user || !firestore || !challenge.id) return;
+    if (!user || !firestore || !challenge.id || challenge.id.startsWith('temp-')) return;
     const challengeRef = doc(firestore, `users/${user.uid}/challenges/${challenge.id}`);
     updateDocumentNonBlocking(challengeRef, { isCompleted: true });
     
@@ -197,7 +196,7 @@ export function ChallengesCard() {
                     </Button>
                     <Button 
                         size="sm" 
-                        disabled={challenge.isCompleted} 
+                        disabled={challenge.isCompleted || challenge.id.startsWith('temp-')} 
                         onClick={() => handleCompleteChallenge(challenge)}
                         className={challenge.isCompleted ? 'bg-green-600' : ''}
                     >
