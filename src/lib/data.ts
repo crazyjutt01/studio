@@ -125,6 +125,7 @@ export const regions = [
     { value: 'JP', label: 'Japan', currency: 'JPY' },
     { value: 'CA', label: 'Canada', currency: 'CAD' },
     { value: 'AU', label: 'Australia', currency: 'AUD' },
+    { value: 'PK', label: 'Pakistan', currency: 'PKR' },
 ];
   
 export const currencies: { [key: string]: { symbol: string, name: string } } = {
@@ -135,4 +136,5 @@ export const currencies: { [key: string]: { symbol: string, name: string } } = {
     JPY: { symbol: '¥', name: 'Japanese Yen' },
     CAD: { symbol: '$', name: 'Canadian Dollar' },
     AUD: { symbol: '$', name: 'Australian Dollar' },
+    PKR: { symbol: '₨', name: 'Pakistani Rupee' },
 };
