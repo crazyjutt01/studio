@@ -53,6 +53,7 @@ export function ChallengesCard() {
   }, [user, firestore]);
 
   const { data: userData } = useDoc<UserData>(userDocRef);
+  const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
   const { data: existingChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
 
   const fetchAndSetChallenges = async () => {
