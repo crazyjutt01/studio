@@ -21,7 +21,7 @@ import {
     DialogFooter
 } from '@/components/ui/dialog';
 
-const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionValue' | 'actionType'>[] = [
+const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionType' | 'actionValue'>[] = [
     {
       title: 'Track Your Spending',
       description: 'Record at least one transaction today.',
@@ -107,15 +107,19 @@ export function ChallengesCard() {
 
     setIsLoading(true);
 
-    const hasDaily = activeChallenges.some(c => c.type === 'daily');
-    const hasWeekly = activeChallenges.some(c => c.type === 'weekly');
-    const hasMonthly = activeChallenges.some(c => c.type === 'monthly');
+    const now = new Date();
+    const startOfToday = startOfDay(now);
+
+    const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
+    
+    // Check for daily challenges for today
+    const dailyQuery = query(challengesCol, where('type', '==', 'daily'), where('expiresAt', '>', Timestamp.fromDate(startOfToday)));
+    const dailySnapshot = await getDocs(dailyQuery);
 
     const batch = writeBatch(firestore);
-    const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
-    const now = new Date();
+    let challengesCreated = false;
 
-    if (!hasDaily) {
+    if (dailySnapshot.empty) {
         defaultDailyChallenges.forEach(challengeDef => {
             const newChallengeRef = doc(challengesCol);
             const dailyChallenge: Omit<Challenge, 'id'> = {
@@ -129,7 +133,12 @@ export function ChallengesCard() {
             };
             batch.set(newChallengeRef, dailyChallenge);
         });
+        challengesCreated = true;
     }
+
+    // AI-based weekly and monthly challenges
+    const hasWeekly = activeChallenges.some(c => c.type === 'weekly');
+    const hasMonthly = activeChallenges.some(c => c.type === 'monthly');
 
     if (!hasWeekly || !hasMonthly) {
         try {
@@ -142,25 +151,25 @@ export function ChallengesCard() {
             });
             
             if (result.weekly && !hasWeekly) {
-                result.weekly.forEach(challengeDef => {
-                    const newChallengeRef = doc(challengesCol);
-                    const weeklyChallenge: Omit<Challenge, 'id'> = { ...challengeDef, type: 'weekly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
-                    batch.set(newChallengeRef, weeklyChallenge);
-                });
+                const newChallengeRef = doc(challengesCol);
+                const weeklyChallenge: Omit<Challenge, 'id'> = { ...result.weekly, type: 'weekly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
+                batch.set(newChallengeRef, weeklyChallenge);
+                challengesCreated = true;
             }
             if (result.monthly && !hasMonthly) {
-                result.monthly.forEach(challengeDef => {
-                    const newChallengeRef = doc(challengesCol);
-                    const monthlyChallenge: Omit<Challenge, 'id'> = { ...challengeDef, type: 'monthly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
-                    batch.set(newChallengeRef, monthlyChallenge);
-                });
+                const newChallengeRef = doc(challengesCol);
+                const monthlyChallenge: Omit<Challenge, 'id'> = { ...result.monthly, type: 'monthly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
+                batch.set(newChallengeRef, monthlyChallenge);
+                challengesCreated = true;
             }
         } catch (err) {
             console.error(err);
         }
     }
     
-    await batch.commit();
+    if (challengesCreated) {
+        await batch.commit();
+    }
     setIsLoading(false);
 
   }, [user, firestore, userData, activeChallenges, savingsGoalsData]);

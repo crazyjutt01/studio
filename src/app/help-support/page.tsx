@@ -33,7 +33,7 @@ const faqs = [
     },
     {
       question: 'How does Gamification work?',
-      answer: 'You earn rewards for being financially active! Completing challenges earns you XP and Coins. Adding a transaction manually earns you 10 XP and 10 Coins. Creating a budget gets you 25 XP and 25 Coins, and setting a savings goal awards 50 XP and 50 Coins. XP (Experience Points) help you level up, unlocking new features and higher-tier challenges. Coins will be used to buy in-app rewards in a future update—stay tuned!',
+      answer: "You earn rewards for being financially active! Completing daily, weekly, and monthly challenges earns you XP and Coins. Specific actions also grant rewards: adding a transaction manually earns you 10 XP and 10 Coins, creating a budget gets you 25 XP and 25 Coins, and setting a savings goal awards 50 XP and 50 Coins. XP (Experience Points) help you level up, unlocking new features and higher-tier challenges. Coins will be used to buy in-app rewards in a future update—stay tuned!",
     },
     {
       question: 'How do I update my income or assets?',
