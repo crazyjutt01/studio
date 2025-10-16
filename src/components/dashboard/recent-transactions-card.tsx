@@ -86,7 +86,7 @@ export function RecentTransactionsCard({
   };
 
   return (
-    <>
+    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
       <Card className="col-span-1 lg:col-span-2">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -99,7 +99,6 @@ export function RecentTransactionsCard({
             <Button
               size="sm"
               className="flex items-center gap-2"
-              onClick={() => setIsAddDialogOpen(true)}
             >
               <PlusCircle className="h-4 w-4" />
               <span>Add Transaction</span>
@@ -196,16 +195,16 @@ export function RecentTransactionsCard({
           </Table>
         </CardContent>
       </Card>
-      {/* Add Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add a New Transaction</DialogTitle>
-          </DialogHeader>
-          <AddTransactionForm onSuccess={() => setIsAddDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
-      {/* Edit Dialog */}
+
+      {/* Add Dialog Content */}
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add a New Transaction</DialogTitle>
+        </DialogHeader>
+        <AddTransactionForm onSuccess={() => setIsAddDialogOpen(false)} />
+      </DialogContent>
+      
+      {/* Edit Dialog - This is separate because it's controlled by a different state */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -220,7 +219,8 @@ export function RecentTransactionsCard({
           />
         </DialogContent>
       </Dialog>
-      {/* Delete Alert Dialog */}
+
+      {/* Delete Alert Dialog - This is also separate */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -244,6 +244,6 @@ export function RecentTransactionsCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </Dialog>
   );
 }
