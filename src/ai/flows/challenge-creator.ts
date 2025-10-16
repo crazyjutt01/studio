@@ -56,7 +56,7 @@ User's Saving Goals: {{{savingGoals}}}
 
 Generate challenges based on the following rules:
 
-1.  **Daily Challenge (Required)**: Always generate one general, useful daily challenge.
+1.  **Daily Challenge (Required)**: Always generate one general, useful daily challenge. This should be a repeatable task that encourages good financial habits, such as "Track all your spending today," "Review your budget," or "No spend day" (challenge the user to not spend any money on non-essential items).
 2.  **Weekly & Monthly Challenges (Conditional)**:
     - If the user HAS saving goals (i.e., 'savingGoals' is not empty), generate one weekly and one monthly challenge tailored to help them achieve those goals. For example, if they are saving for a 'Vacation', a weekly challenge could be "Skip one takeout meal and put that money towards your Vacation fund."
     - If the user has NO saving goals, DO NOT generate weekly or monthly challenges.

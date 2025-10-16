@@ -32,6 +32,10 @@ const faqs = [
       answer: 'AdvisorAI is your on-demand financial chatbot. You can ask it questions in plain English about your finances, like "How much did I spend on food this month?" or "Am I on track to meet my savings goal?". It uses your live data to give you instant answers.',
     },
     {
+      question: 'How does Gamification work?',
+      answer: 'You can earn rewards by completing financial tasks. Adding a transaction earns you 10 XP and 10 Coins. Adding a budget earns 25 XP and 25 Coins. Adding a savings goal earns 50 XP and 50 Coins. XP (Experience Points) help you level up, unlocking new features and higher-tier challenges. Coins will be used to buy in-app rewards in a future update—stay tuned!',
+    },
+    {
       question: 'How do I update my income or assets?',
       answer: 'Navigate to the Settings page from the user menu in the header. There you can update your first name, last name, monthly income, and total current assets. This information helps the AI give you more accurate advice.',
     },
