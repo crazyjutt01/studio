@@ -38,6 +38,37 @@
         "digestTime": {
           "type": "string",
           "description": "The time of day the user wants to receive their daily digest."
+        },
+        "region": {
+            "type": "string",
+            "description": "The user's selected region (e.g., 'US', 'GB')."
+        },
+        "currency": {
+            "type": "string",
+            "description": "The user's selected currency (e.g., 'USD', 'GBP')."
+        },
+        "xp": {
+            "type": "number",
+            "description": "The user's experience points for gamification."
+        },
+        "level": {
+            "type": "number",
+            "description": "The user's current level in the gamification system."
+        },
+        "coins": {
+            "type": "number",
+            "description": "The user's in-app currency."
+        },
+        "streak": {
+            "type": "number",
+            "description": "The user's current daily login streak."
+        },
+        "badges": {
+            "type": "array",
+            "description": "A list of badges the user has earned.",
+            "items": {
+                "type": "string"
+            }
         }
       },
       "required": [
@@ -78,13 +109,18 @@
           "type": "string",
           "description": "The end date of the budget.",
           "format": "date-time"
+        },
+        "category": {
+            "type": "string",
+            "enum": ["Food", "Travel", "Shopping", "Bills", "Overall", "Others"]
         }
       },
       "required": [
         "id",
         "userId",
         "name",
-        "amount"
+        "amount",
+        "category"
       ]
     },
     "Transaction": {
@@ -114,9 +150,9 @@
           "type": "string",
           "description": "Description of the transaction."
         },
-        "categoryId": {
+        "category": {
           "type": "string",
-          "description": "Reference to Category. (Relationship: Category 1:N Transaction)"
+          "enum": ["Food", "Travel", "Shopping", "Bills", "Others"]
         }
       },
       "required": [
@@ -124,7 +160,8 @@
         "userId",
         "date",
         "amount",
-        "description"
+        "description",
+        "category"
       ]
     },
     "Category": {
@@ -357,8 +394,7 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
@@ -503,3 +539,5 @@
     "reasoning": "The Firestore structure is designed to ensure data isolation and efficient querying by leveraging path-based ownership for user-specific data. Each user has their own dedicated collections for budgets, transactions, categories, saving goals, and alerts. This approach simplifies security rules and allows for direct querying of a user's resources.  The structure avoids hierarchical authorization dependencies by directly associating all user-related data under the respective user ID, enabling atomic operations and straightforward access control based on `request.auth.uid`. This eliminates the need for `get()` calls in security rules, promoting Authorization Independence. The AI-related data can be stored under the user as well, further simplifying the data structure.  This design supports secure list operations (QAPs) because each collection is scoped to a specific user, and rules can easily enforce that only the authenticated user can access their own data. In particular, each collection is segregated by `userId`.  Timestamps are included in `Transaction` and `Alert` to maintain chronological order, and the `userId` field is enforced to ensure ownership."
   }
 }
+
+    

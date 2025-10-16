@@ -6,7 +6,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserData } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, Shield, Star, Award, Coins } from 'lucide-react';
+import { Trophy, Shield, Coins, Flame } from 'lucide-react';
 import { AchievementsCard } from '@/components/dashboard/achievements-card';
 
 export default function GamificationPage() {
@@ -25,6 +25,7 @@ export default function GamificationPage() {
   const xpForNextLevel = level * 100;
   const progress = (xp / xpForNextLevel) * 100;
   const coins = userData?.coins ?? 0;
+  const streak = userData?.streak ?? 0;
 
   return (
     <>
@@ -61,9 +62,15 @@ export default function GamificationPage() {
                         <Progress value={progress} className="h-3" />
                         <p className="text-sm text-muted-foreground mt-2">{xp} / {xpForNextLevel} XP</p>
                     </div>
-                    <div className="flex justify-center items-center gap-2 text-lg font-semibold pt-4">
-                        <Coins className="w-6 h-6 text-yellow-500" />
-                        <span>{coins} Coins</span>
+                    <div className="flex justify-center items-center gap-6 text-lg font-semibold pt-4">
+                        <div className="flex items-center gap-2">
+                            <Coins className="w-6 h-6 text-yellow-500" />
+                            <span>{coins} Coins</span>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <Flame className="w-6 h-6 text-orange-500" />
+                            <span>{streak} Day Streak</span>
+                        </div>
                     </div>
                   </div>
                 )}
@@ -77,3 +84,5 @@ export default function GamificationPage() {
     </>
   );
 }
+
+    

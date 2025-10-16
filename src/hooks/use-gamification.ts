@@ -79,8 +79,8 @@ export function useGamification() {
             isEarned = (transactions?.length || 0) + 1 >= badge.value;
         } else if (badge.type === 'savings_goal_amount' && badge.value) {
             isEarned = goals?.some(g => g.targetAmount >= badge.value) || false;
-        } else if (badge.xpThreshold) {
-            isEarned = newXp >= badge.xpThreshold;
+        } else if (badge.type === 'xp') {
+            isEarned = newXp >= badge.value;
         }
 
         if (isEarned) {
@@ -114,3 +114,5 @@ export function useGamification() {
     levelUpInfo,
   };
 }
+
+    
