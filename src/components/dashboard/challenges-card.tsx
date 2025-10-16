@@ -1,16 +1,16 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { createChallenges, type CreateChallengesOutput } from '@/ai/flows/challenge-creator';
+import { createChallenges } from '@/ai/flows/challenge-creator';
 import { getChallengeTip } from '@/ai/flows/get-challenge-tip';
 import { Loader2, Dices, Award, HelpCircle, Check, Sparkles, X } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, doc, where, getDocs, Timestamp } from 'firebase/firestore';
-import type { UserData, SavingsGoal, Challenge } from '@/lib/data';
+import { collection, query, doc, where, getDocs, Timestamp, writeBatch } from 'firebase/firestore';
+import type { UserData, SavingsGoal, Challenge, Transaction, Budget } from '@/lib/data';
 import { Skeleton } from '../ui/skeleton';
-import { add, endOfDay, endOfWeek, endOfMonth, isBefore, startOfDay } from 'date-fns';
+import { endOfDay, endOfWeek, endOfMonth, isAfter, startOfDay } from 'date-fns';
 import { useGamification } from '@/hooks/use-gamification';
 import {
     Dialog,
@@ -21,33 +21,39 @@ import {
     DialogFooter
 } from '@/components/ui/dialog';
 
-const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type'>[] = [
+const defaultDailyChallenges: Omit<Challenge, 'id' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionValue' | 'actionType'>[] = [
     {
-      title: 'Log a Transaction',
-      description: 'Record any expense or income today.',
+      title: 'Track Your Spending',
+      description: 'Record at least one transaction today.',
+      xp: 15,
+      coins: 15,
+      tip: 'Use SpendSpy to upload a receipt for a quick and easy way to track expenses!',
+    },
+    {
+      title: 'Check Your Budgets',
+      description: 'Visit the BudgetBot page to see your spending limits.',
       xp: 10,
       coins: 10,
-      tip: 'You can add a transaction manually or upload a receipt in SpendSpy!',
+      tip: 'Knowing your budget is the first step to staying on track!',
     },
     {
-      title: 'Review Your Budget',
-      description: 'Check in on your monthly budget to see your progress.',
-      xp: 5,
-      coins: 5,
-      tip: 'Visit the BudgetBot page to see how you are tracking against your limits.',
+      title: 'Review Your Goals',
+      description: 'Look at your savings goals on the GoalGuru page.',
+      xp: 10,
+      coins: 10,
+      tip: 'Keeping your goals in mind helps you stay motivated.',
     },
-    {
-      title: 'Set a Goal',
-      description: 'Create a new savings goal for something you want.',
-      xp: 25,
-      coins: 25,
-      tip: 'Big or small, every goal is a step in the right direction! Visit GoalGuru to add one.'
-    }
+     {
+      title: 'Ask for Advice',
+      description: 'Ask AdvisorAI a question about your finances.',
+      xp: 20,
+      coins: 20,
+      tip: 'AdvisorAI can give you an instant summary of your spending. Try asking "How much did I spend this week?".',
+    },
 ];
 
 export function ChallengesCard() {
   const [isLoading, setIsLoading] = useState(true);
-  const [challenges, setChallenges] = useState<Challenge[]>([]);
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -55,7 +61,6 @@ export function ChallengesCard() {
   const [isTipDialogOpen, setIsTipDialogOpen] = useState(false);
   const [tipContent, setTipContent] = useState({ title: '', tip: '' });
   const [isTipLoading, setIsTipLoading] = useState(false);
-
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -76,9 +81,23 @@ export function ChallengesCard() {
     );
   }, [user, firestore]);
 
+  const transactionsQuery = useMemoFirebase(() => {
+    if(!user || !firestore) return null;
+    return query(collection(firestore, `users/${user.uid}/transactions`));
+  }, [user, firestore]);
+
+  const budgetsQuery = useMemoFirebase(() => {
+    if(!user || !firestore) return null;
+    return query(collection(firestore, `users/${user.uid}/budgets`));
+  }, [user, firestore]);
+
   const { data: userData } = useDoc<UserData>(userDocRef);
   const { data: savingsGoalsData } = useCollection<SavingsGoal>(savingsGoalsQuery);
-  const { data: existingChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
+  const { data: transactionsData } = useCollection<Transaction>(transactionsQuery);
+  const { data: budgetsData } = useCollection<Budget>(budgetsQuery);
+  const { data: allChallenges, isLoading: areChallengesLoading } = useCollection<Challenge>(challengesQuery);
+
+  const activeChallenges = useMemo(() => allChallenges?.filter(c => isAfter(c.expiresAt.toDate(), new Date())) || [], [allChallenges]);
 
   const fetchAndSetChallenges = useCallback(async () => {
     if (!user || !userData || !firestore) {
@@ -87,87 +106,115 @@ export function ChallengesCard() {
     }
 
     setIsLoading(true);
-    const now = new Date();
-    const todayStart = startOfDay(now);
 
-    const activeChallenges: Challenge[] = existingChallenges || [];
-    
-    let hasDaily = activeChallenges.some(c => c.type === 'daily');
+    const hasDaily = activeChallenges.some(c => c.type === 'daily');
     const hasWeekly = activeChallenges.some(c => c.type === 'weekly');
     const hasMonthly = activeChallenges.some(c => c.type === 'monthly');
 
+    const batch = writeBatch(firestore);
     const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
-    const newChallenges: Challenge[] = [];
+    const now = new Date();
 
-    // Manually add daily challenges if they don't exist for today
     if (!hasDaily) {
-        for (const challengeDef of defaultDailyChallenges) {
-            const dailyChallenge: Omit<Challenge, 'id'> = { ...challengeDef, type: 'daily', isCompleted: false, expiresAt: Timestamp.fromDate(endOfDay(now)) };
-            addDocumentNonBlocking(challengesCol, dailyChallenge);
-            newChallenges.push({ ...dailyChallenge, id: `temp-daily-${Math.random()}` } as Challenge);
-        }
-        hasDaily = true;
+        defaultDailyChallenges.forEach(challengeDef => {
+            const newChallengeRef = doc(challengesCol);
+            const dailyChallenge: Omit<Challenge, 'id'> = {
+                ...challengeDef,
+                type: 'daily',
+                status: 'active',
+                expiresAt: Timestamp.fromDate(endOfDay(now)),
+                actionType: 'none',
+                isCompleted: false,
+                actionValue: 0
+            };
+            batch.set(newChallengeRef, dailyChallenge);
+        });
     }
 
-
-    if (hasDaily && hasWeekly && hasMonthly) {
-      setChallenges(activeChallenges);
-      setIsLoading(false);
-      return;
+    if (!hasWeekly || !hasMonthly) {
+        try {
+            const result = await createChallenges({
+                userId: user.uid,
+                level: userData.level || 1,
+                savingGoals: JSON.stringify(savingsGoalsData),
+                region: userData.region || 'US',
+                currency: userData.currency || 'USD',
+            });
+            
+            if (result.weekly && !hasWeekly) {
+                result.weekly.forEach(challengeDef => {
+                    const newChallengeRef = doc(challengesCol);
+                    const weeklyChallenge: Omit<Challenge, 'id'> = { ...challengeDef, type: 'weekly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
+                    batch.set(newChallengeRef, weeklyChallenge);
+                });
+            }
+            if (result.monthly && !hasMonthly) {
+                result.monthly.forEach(challengeDef => {
+                    const newChallengeRef = doc(challengesCol);
+                    const monthlyChallenge: Omit<Challenge, 'id'> = { ...challengeDef, type: 'monthly', status: 'active', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
+                    batch.set(newChallengeRef, monthlyChallenge);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
     }
     
-    try {
-      // Use AI for weekly and monthly if needed
-      if (!hasWeekly || !hasMonthly) {
-        const result = await createChallenges({
-          userId: user.uid,
-          level: userData.level || 1,
-          savingGoals: JSON.stringify(savingsGoalsData),
-          region: userData.region || 'US',
-          currency: userData.currency || 'USD',
-        });
-        
-        if (result.weekly && !hasWeekly) {
-          const weeklyChallenge: Omit<Challenge, 'id'> = { ...result.weekly, type: 'weekly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfWeek(now)) };
-          addDocumentNonBlocking(challengesCol, weeklyChallenge);
-          newChallenges.push({ ...weeklyChallenge, id: `temp-weekly-${Math.random()}` } as Challenge);
-        }
-        if (result.monthly && !hasMonthly) {
-          const monthlyChallenge: Omit<Challenge, 'id'> = { ...result.monthly, type: 'monthly', isCompleted: false, expiresAt: Timestamp.fromDate(endOfMonth(now)) };
-          addDocumentNonBlocking(challengesCol, monthlyChallenge);
-          newChallenges.push({ ...monthlyChallenge, id: `temp-monthly-${Math.random()}` } as Challenge);
-        }
-      }
-      
-      setChallenges([...activeChallenges, ...newChallenges]);
+    await batch.commit();
+    setIsLoading(false);
 
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-      toast({
-        variant: 'destructive',
-        title: 'Error Generating Challenges',
-        description: errorMessage,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, firestore, userData, existingChallenges, savingsGoalsData, toast]);
+  }, [user, firestore, userData, activeChallenges, savingsGoalsData]);
 
 
   useEffect(() => {
-    if(!areChallengesLoading && userData) {
+    if(!areChallengesLoading && userData && user) {
         fetchAndSetChallenges();
     }
-  }, [areChallengesLoading, userData, fetchAndSetChallenges]);
+  }, [areChallengesLoading, userData, user, fetchAndSetChallenges]);
+  
+  const checkChallengeEligibility = useCallback(async () => {
+    if (!activeChallenges.length || !user || !firestore) return;
 
-  const handleCompleteChallenge = (challenge: Challenge) => {
-    if (!user || !firestore || !challenge.id || challenge.id.startsWith('temp-')) return;
+    const batch = writeBatch(firestore);
+    let dirty = false;
+
+    activeChallenges.forEach(challenge => {
+        if(challenge.status !== 'active') return;
+
+        let isEligible = false;
+        if(challenge.actionType === 'transaction') {
+            const hasMatchingTransaction = transactionsData?.some(t => {
+                const challengeDate = challenge.expiresAt.toDate();
+                const transactionDate = new Date(t.date);
+                const isRecent = transactionDate <= challengeDate;
+                return isRecent && t.amount >= (challenge.actionValue || 0);
+            });
+            if(hasMatchingTransaction) isEligible = true;
+        }
+
+        if(isEligible) {
+            const challengeRef = doc(firestore, `users/${user.uid}/challenges`, challenge.id);
+            batch.update(challengeRef, { status: 'eligible' });
+            dirty = true;
+        }
+    });
+
+    if(dirty) {
+        await batch.commit();
+    }
+  }, [activeChallenges, transactionsData, user, firestore]);
+
+  useEffect(() => {
+    checkChallengeEligibility();
+  }, [checkChallengeEligibility]);
+
+
+  const handleClaimReward = (challenge: Challenge) => {
+    if (!user || !firestore || !challenge.id) return;
     const challengeRef = doc(firestore, `users/${user.uid}/challenges/${challenge.id}`);
-    updateDocumentNonBlocking(challengeRef, { isCompleted: true });
+    updateDocumentNonBlocking(challengeRef, { status: 'completed', isCompleted: true });
     
-    awardXP('add_goal'); // Using add_goal XP for now
-    
-    setChallenges(prev => prev.map(c => c.id === challenge.id ? {...c, isCompleted: true} : c));
+    awardXP('add_goal', challenge.xp);
   };
   
   const handleShowTip = async (challenge: Challenge) => {
@@ -175,10 +222,18 @@ export function ChallengesCard() {
     setIsTipDialogOpen(true);
   };
   
-  const sortedChallenges = challenges.sort((a,b) => {
-      const order = { daily: 1, weekly: 2, monthly: 3 };
-      return order[a.type] - order[b.type];
-  });
+  const sortedChallenges = useMemo(() => {
+    if (!activeChallenges) return [];
+    return [...activeChallenges].sort((a,b) => {
+        const order = { daily: 1, weekly: 2, monthly: 3 };
+        const typeOrder = order[a.type] - order[b.type];
+        if (typeOrder !== 0) return typeOrder;
+        
+        const statusOrder = { eligible: 1, active: 2, completed: 3 };
+        return statusOrder[a.status] - statusOrder[b.status];
+    });
+  }, [activeChallenges]);
+
 
   return (
     <>
@@ -224,18 +279,27 @@ export function ChallengesCard() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
-                    <Button variant="outline" size="sm" onClick={() => handleShowTip(challenge)}>
-                        <HelpCircle className="w-4 h-4 mr-2" />
-                        Help
-                    </Button>
-                    <Button 
-                        size="sm" 
-                        disabled={challenge.isCompleted || challenge.id.startsWith('temp-')} 
-                        onClick={() => handleCompleteChallenge(challenge)}
-                        className={challenge.isCompleted ? 'bg-green-600' : ''}
-                    >
-                       {challenge.isCompleted ? <Check className="w-4 h-4" /> : 'Complete' }
-                    </Button>
+                    {challenge.tip && (
+                        <Button variant="outline" size="sm" onClick={() => handleShowTip(challenge)}>
+                            <HelpCircle className="w-4 h-4 mr-2" />
+                            Tip
+                        </Button>
+                    )}
+                    {challenge.status === 'active' && (
+                        <Button size="sm" disabled>
+                           Pending
+                        </Button>
+                    )}
+                    {challenge.status === 'eligible' && (
+                         <Button size="sm" onClick={() => handleClaimReward(challenge)}>
+                           Claim Reward
+                        </Button>
+                    )}
+                    {challenge.status === 'completed' && (
+                        <Button size="sm" disabled className="bg-green-600">
+                           <Check className="w-4 h-4 mr-2" /> Claimed
+                        </Button>
+                    )}
                 </div>
               </div>
             ))}
