@@ -18,11 +18,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FinSafeLogo } from '@/components/icons';
-import { useAuth, useUser, useFirestore, initiateEmailSignUp, initiateGoogleSignIn } from '@/firebase';
+import { useAuth, useUser, useFirestore, initiateEmailSignUp } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { Separator } from '@/components/ui/separator';
+import { doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   firstName: z.string().min(1, { message: 'First name is required.' }),
@@ -40,8 +39,6 @@ export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
-
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(formSchema),
@@ -94,41 +91,6 @@ export default function SignUpPage() {
      } finally {
         setIsSubmitting(false);
      }
-  }
-
-  async function handleGoogleSignIn() {
-    if (!auth || !firestore) return;
-    setIsGoogleSubmitting(true);
-    try {
-      const userCredential = await initiateGoogleSignIn(auth);
-      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
-      const docSnap = await getDoc(userDocRef);
-
-      if (!docSnap.exists()) {
-        const [firstName, lastName] = (userCredential.user.displayName || 'New User').split(' ');
-        await setDoc(userDocRef, {
-           firstName: firstName || 'New',
-           lastName: lastName || 'User',
-           email: userCredential.user.email,
-           avatarUrl: 'user-avatar-1',
-           monthlyIncome: 0,
-           savingGoals: 'Get started with FinSafe!',
-           assets: 0,
-           region: 'US',
-           currency: 'USD',
-        });
-      }
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error(error);
-      toast({
-          variant: 'destructive',
-          title: 'Google Sign-In Failed',
-          description: 'Could not sign in with Google. Please try again.',
-      });
-    } finally {
-        setIsGoogleSubmitting(false);
-    }
   }
   
   if (isUserLoading || user) {
@@ -209,22 +171,12 @@ export default function SignUpPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isSubmitting || isGoogleSubmitting} className="w-full">
+              <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create Account
               </Button>
             </form>
           </Form>
-           <div className="relative my-4">
-            <Separator />
-            <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                OR CONTINUE WITH
-            </span>
-          </div>
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isSubmitting || isGoogleSubmitting}>
-             {isGoogleSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 381.5 512 244 512 111.8 512 0 400.2 0 261.8 0 123.8 111.8 12.8 244 12.8c70.3 0 132.3 33.3 175.1 86.8L340 165.2c-20.7-20.7-52.4-33.3-85.9-33.3-71.5 0-129.5 58.8-129.5 131.3 0 72.5 58 131.3 129.5 131.3 76.3 0 120.3-53.9 124.2-82.9H244v-66h243.6c1.3 8.3 1.9 16.5 1.9 24.7z"></path></svg>}
-            Sign up with Google
-          </Button>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="underline">
