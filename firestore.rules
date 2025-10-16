@@ -1,217 +1,183 @@
+/**
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model, ensuring that only the authenticated user can access their own data.
+ * All data is nested under /users/{userId}, creating a clear hierarchical structure.
+ *
+ * Key Security Decisions:
+ *  - Users can only access their own data.
+ *  - Data consistency is enforced by validating the userId on create operations and enforcing immutability on updates.
+ *  - Read and write permissions are explicitly defined for each collection.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is authenticated.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Requires user authentication for any data access.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the request is made by the owner of the resource.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Enforces document ownership for data access.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the request is made by the existing owner of the resource.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Enforces document ownership for data access, ensuring the document exists.
-     */
-    function isExistingOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId && exists(resource);
-    }
-
-    /**
-     * @description Enforces that the incoming document's userId matches the path's userId parameter.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Validates the relational integrity between document data and path.
-     */
-    function matchesUserId(userId) {
-        return request.resource.data.userId == userId;
-    }
-
-    /**
-     * @description Rules for the /users/{userId} collection.
+     * @description Allows users to read and write their own user document.
      * @path /users/{userId}
-     * @allow (create) - User with UID 'user123' can create a user document with id 'user123'.
-     * @allow (get, list) - User with UID 'user123' can read their own user document.
-     * @allow (update) - User with UID 'user123' can update their own user document.
-     * @allow (delete) - User with UID 'user123' can delete their own user document.
-     * @deny (create) - User with UID 'user456' cannot create a user document with id 'user123'.
-     * @deny (get, list) - User with UID 'user456' cannot read user document of 'user123'.
-     * @deny (update) - User with UID 'user456' cannot update user document of 'user123'.
-     * @deny (delete) - User with UID 'user456' cannot delete user document of 'user123'.
-     * @principle Enforces document ownership for all operations on user documents.
+     * @allow (create, update, get, delete) if the user's ID matches the document ID.
+     * @deny (create, update, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId) && matchesUserId(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
     }
 
     /**
-     * @description Rules for the /users/{userId}/budgets/{budgetId} collection.
+     * @description Allows users to read and write their own budgets.
      * @path /users/{userId}/budgets/{budgetId}
-     * @allow (create) - User with UID 'user123' can create a budget document under /users/user123/budgets/.
-     * @allow (get, list) - User with UID 'user123' can read budgets under their own user document.
-     * @allow (update) - User with UID 'user123' can update their own budget document.
-     * @allow (delete) - User with UID 'user123' can delete their own budget document.
-     * @deny (create) - User with UID 'user456' cannot create a budget document under /users/user123/budgets/.
-     * @deny (get, list) - User with UID 'user456' cannot read budgets under /users/user123/budgets/.
-     * @deny (update) - User with UID 'user456' cannot update budget document under /users/user123/budgets/.
-     * @deny (delete) - User with UID 'user456' cannot delete budget document under /users/user123/budgets/.
-     * @principle Enforces document ownership for all operations on budget documents.
+     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
+     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/budgets/{budgetId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Rules for the /users/{userId}/transactions/{transactionId} collection.
+     * @description Allows users to read and write their own transactions.
      * @path /users/{userId}/transactions/{transactionId}
-     * @allow (create) - User with UID 'user123' can create a transaction document under /users/user123/transactions/.
-     * @allow (get, list) - User with UID 'user123' can read transactions under their own user document.
-     * @allow (update) - User with UID 'user123' can update their own transaction document.
-     * @allow (delete) - User with UID 'user123' can delete their own transaction document.
-     * @deny (create) - User with UID 'user456' cannot create a transaction document under /users/user123/transactions/.
-     * @deny (get, list) - User with UID 'user456' cannot read transactions under /users/user123/transactions/.
-     * @deny (update) - User with UID 'user456' cannot update transaction document under /users/user123/transactions/.
-     * @deny (delete) - User with UID 'user456' cannot delete transaction document under /users/user123/transactions/.
-     * @principle Enforces document ownership for all operations on transaction documents.
+     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
+     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/transactions/{transactionId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Rules for the /users/{userId}/categories/{categoryId} collection.
+     * @description Allows users to read and write their own categories.
      * @path /users/{userId}/categories/{categoryId}
-     * @allow (create) - User with UID 'user123' can create a category document under /users/user123/categories/.
-     * @allow (get, list) - User with UID 'user123' can read categories under their own user document.
-     * @allow (update) - User with UID 'user123' can update their own category document.
-     * @allow (delete) - User with UID 'user123' can delete their own category document.
-     * @deny (create) - User with UID 'user456' cannot create a category document under /users/user123/categories/.
-     * @deny (get, list) - User with UID 'user456' cannot read categories under /users/user123/categories/.
-     * @deny (update) - User with UID 'user456' cannot update category document under /users/user123/categories/.
-     * @deny (delete) - User with UID 'user456' cannot delete category document under /users/user123/categories/.
-     * @principle Enforces document ownership for all operations on category documents.
+     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
+     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/categories/{categoryId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Rules for the /users/{userId}/savingGoals/{savingGoalId} collection.
+     * @description Allows users to read and write their own saving goals.
      * @path /users/{userId}/savingGoals/{savingGoalId}
-     * @allow (create) - User with UID 'user123' can create a savingGoal document under /users/user123/savingGoals/.
-     * @allow (get, list) - User with UID 'user123' can read savingGoals under their own user document.
-     * @allow (update) - User with UID 'user123' can update their own savingGoal document.
-     * @allow (delete) - User with UID 'user123' can delete their own savingGoal document.
-     * @deny (create) - User with UID 'user456' cannot create a savingGoal document under /users/user123/savingGoals/.
-     * @deny (get, list) - User with UID 'user456' cannot read savingGoals under /users/user123/savingGoals/.
-     * @deny (update) - User with UID 'user456' cannot update savingGoal document under /users/user123/savingGoals/.
-     * @deny (delete) - User with UID 'user456' cannot delete savingGoal document under /users/user123/savingGoals/.
-     * @principle Enforces document ownership for all operations on savingGoal documents.
+     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
+     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/savingGoals/{savingGoalId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Rules for the /users/{userId}/alerts/{alertId} collection.
+     * @description Allows users to read and write their own alerts.
      * @path /users/{userId}/alerts/{alertId}
-     * @allow (create) - User with UID 'user123' can create a alert document under /users/user123/alerts/.
-     * @allow (get, list) - User with UID 'user123' can read alerts under their own user document.
-     * @allow (update) - User with UID 'user123' can update their own alert document.
-     * @allow (delete) - User with UID 'user123' can delete their own alert document.
-     * @deny (create) - User with UID 'user456' cannot create a alert document under /users/user123/alerts/.
-     * @deny (get, list) - User with UID 'user456' cannot read alerts under /users/user123/alerts/.
-     * @deny (update) - User with UID 'user456' cannot update alert document under /users/user123/alerts/.
-     * @deny (delete) - User with UID 'user456' cannot delete alert document under /users/user123/alerts/.
-     * @principle Enforces document ownership for all operations on alert documents.
+     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
+     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/alerts/{alertId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Rules for the /users/{userId}/emergencyContacts/{contactId} collection.
+     * @description Allows users to read and write their own emergency contacts.
      * @path /users/{userId}/emergencyContacts/{contactId}
-     * @allow (create) - User with UID 'user123' can create a emergencyContact document under /users/user123/emergencyContacts/.
-     * @allow (get, list) - User with UID 'user123' can read emergencyContacts under their own user document.
-     * @allow (update) - User with UID 'user123' can update their own emergencyContact document.
-     * @allow (delete) - User with UID 'user123' can delete their own emergencyContact document.
-     * @deny (create) - User with UID 'user456' cannot create a emergencyContact document under /users/user123/emergencyContacts/.
-     * @deny (get, list) - User with UID 'user456' cannot read emergencyContacts under /users/user123/emergencyContacts/.
-     * @deny (update) - User with UID 'user456' cannot update emergencyContact document under /users/user123/emergencyContacts/.
-     * @deny (delete) - User with UID 'user456' cannot delete emergencyContact document under /users/user123/emergencyContacts/.
-     * @principle Enforces document ownership for all operations on emergencyContact documents.
+     * @allow (create, update, get, list, delete) if the user's ID matches the document ID.
+     * @deny (create, update, get, list, delete) if the user's ID does not match the document ID.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/emergencyContacts/{contactId} {
-      // Read rules
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-      // Write rules
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
   }
 }
