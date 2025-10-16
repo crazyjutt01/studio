@@ -8,8 +8,7 @@ import {
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LifeBuoy, Mail, Users, Star, Quote, Award } from 'lucide-react';
-import { User } from 'lucide-react';
+import { LifeBuoy, Mail, Users, Star, Quote, Award, Code, FileText, Presentation } from 'lucide-react';
 
 const faqs = [
     {
@@ -39,9 +38,9 @@ const faqs = [
   ];
 
 const developers = [
-    { name: 'Mahyudeen Shahid', role: 'Developer & Team Lead' },
-    { name: 'Shahzaib Javeed', role: 'Documentation' },
-    { name: 'Syeda Hania Zahra', role: 'Presentation & Documentation' },
+    { name: 'Mahyudeen Shahid', role: 'Developer & Team Lead', icon: Code },
+    { name: 'Shahzaib Javeed', role: 'Documentation', icon: FileText },
+    { name: 'Syeda Hania Zahra', role: 'Presentation & Documentation', icon: Presentation },
 ];
 
 export default function HelpSupportPage() {
@@ -97,18 +96,22 @@ export default function HelpSupportPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {developers.map(dev => (
+                        {developers.map(dev => {
+                            const Icon = dev.icon;
+                            return (
                             <div key={dev.name} className="flex items-center gap-4">
-                                <div className="p-2 bg-muted rounded-full">
-                                    <User className="h-6 w-6 text-muted-foreground" />
+                                <div className="p-3 bg-muted rounded-full">
+                                    <Icon className="h-6 w-6 text-muted-foreground" />
                                 </div>
-                                <div>
-                                    <p className="font-semibold">{dev.name}</p>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-semibold">{dev.name}</p>
+                                        {dev.role.includes('Team Lead') && <Award className="h-5 w-5 text-yellow-500" />}
+                                    </div>
                                     <p className="text-sm text-muted-foreground">{dev.role}</p>
                                 </div>
-                                {dev.role.includes('Team Lead') && <Award className="h-5 w-5 text-yellow-500 ml-auto" />}
                             </div>
-                        ))}
+                        )})}
                     </div>
                     <div className="mt-6 border-t pt-4">
                         <blockquote className="flex items-start gap-3">
