@@ -69,32 +69,36 @@ export function useChallengeChecker() {
 
     const fetchAndSetChallenges = useCallback(async () => {
         if (!user || !firestore) return;
-
+    
         const challengesCol = collection(firestore, `users/${user.uid}/challenges`);
         const today = startOfDay(new Date());
-        
-        const dailyQuery = query(challengesCol, where('type', '==', 'daily'), where('expiresAt', '>', Timestamp.fromDate(today)));
-        const dailySnapshot = await getDocs(dailyQuery);
-
-        if (dailySnapshot.empty) {
-            const batch = writeBatch(firestore);
-            defaultDailyChallenges.forEach(challengeDef => {
-                const newChallengeRef = doc(challengesCol);
-                const dailyChallenge: Omit<Challenge, 'id'> = {
-                    ...challengeDef,
-                    userId: user.uid,
-                    type: 'daily',
-                    status: 'active',
-                    expiresAt: Timestamp.fromDate(endOfDay(today)),
-                    actionType: 'none',
-                    isCompleted: false,
-                    actionValue: 0
-                };
-                batch.set(newChallengeRef, dailyChallenge);
-            });
-            await batch.commit();
+    
+        // Query for any challenge that expires after the start of today
+        const q = query(challengesCol, where('expiresAt', '>', Timestamp.fromDate(today)));
+        const snapshot = await getDocs(q);
+    
+        // Filter for daily challenges on the client side
+        const dailyChallengesExist = snapshot.docs.some(doc => doc.data().type === 'daily');
+    
+        if (!dailyChallengesExist) {
+          const batch = writeBatch(firestore);
+          defaultDailyChallenges.forEach(challengeDef => {
+            const newChallengeRef = doc(challengesCol);
+            const dailyChallenge: Omit<Challenge, 'id'> = {
+              ...challengeDef,
+              userId: user.uid,
+              type: 'daily',
+              status: 'active',
+              expiresAt: Timestamp.fromDate(endOfDay(today)),
+              actionType: 'none',
+              isCompleted: false,
+              actionValue: 0,
+            };
+            batch.set(newChallengeRef, dailyChallenge);
+          });
+          await batch.commit();
         }
-    }, [user, firestore]);
+      }, [user, firestore]);
 
     const checkChallengeEligibility = useCallback(async () => {
         if (!allChallenges?.length || !user || !firestore) return;
