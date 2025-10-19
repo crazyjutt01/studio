@@ -18,6 +18,7 @@ import {
     DialogDescription,
     DialogFooter
 } from '@/components/ui/dialog';
+import { usePathname } from 'next/navigation';
 
 const defaultDailyChallenges: Omit<Challenge, 'id' | 'userId' | 'expiresAt' | 'isCompleted' | 'type' | 'status' | 'actionType' | 'actionValue'>[] = [
     {
@@ -66,6 +67,7 @@ export function ChallengesCard() {
   const [isTipDialogOpen, setIsTipDialogOpen] = useState(false);
   const [tipContent, setTipContent] = useState({ title: '', tip: '' });
   const [isTipLoading, setIsTipLoading] = useState(false);
+  const pathname = usePathname();
 
   const userDocRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -142,12 +144,41 @@ export function ChallengesCard() {
         if(challenge.status !== 'active') continue;
 
         let isEligible = false;
-        
-        // Simple check based on title for manual challenges
         const todayStart = startOfDay(new Date());
-        if (challenge.title === 'Log a Transaction' && transactionsData) {
-            const hasTodayTransaction = transactionsData.some(t => new Date(t.date) >= todayStart);
-            if (hasTodayTransaction) isEligible = true;
+
+        switch (challenge.title) {
+          case 'Log a Transaction':
+            if (transactionsData?.some(t => new Date(t.date) >= todayStart)) {
+              isEligible = true;
+            }
+            break;
+          case 'Review Your Budget':
+            if (pathname.includes('/budget-bot')) {
+              isEligible = true;
+            }
+            break;
+          case 'Check Your Goals':
+            if (pathname.includes('/goal-guru')) {
+              isEligible = true;
+            }
+            break;
+          case 'Ask for Advice':
+             // This can be triggered by just visiting the page for simplicity
+            if (pathname.includes('/advisor-ai')) {
+              isEligible = true;
+            }
+            break;
+          case 'No-Spend Challenge':
+            // If there are no transactions for non-essential items today
+            const nonEssentialSpending = transactionsData?.filter(t => {
+                const isToday = new Date(t.date) >= todayStart;
+                const isNonEssential = t.category === 'Shopping' || t.category === 'Food' || t.category === 'Travel';
+                return isToday && isNonEssential;
+            }).length;
+            if (nonEssentialSpending === 0) {
+                isEligible = true;
+            }
+            break;
         }
 
         if(isEligible) {
@@ -160,7 +191,7 @@ export function ChallengesCard() {
     if(dirty) {
         await batch.commit();
     }
-  }, [allChallenges, transactionsData, user, firestore]);
+  }, [allChallenges, transactionsData, user, firestore, pathname]);
 
   useEffect(() => {
     checkChallengeEligibility();
