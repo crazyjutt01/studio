@@ -11,13 +11,21 @@ type LevelUpInfo = {
   newLevel: number;
 };
 
-type Action = 'add_transaction' | 'add_budget' | 'add_goal';
+type Action = 'add_transaction' | 'add_budget' | 'add_goal' | 'claim_challenge';
 
 const XP_REWARDS: Record<Action, number> = {
   add_transaction: 10,
   add_budget: 25,
   add_goal: 50,
+  claim_challenge: 0, // This will be dynamic
 };
+
+const COIN_REWARDS: Record<Action, number> = {
+    add_transaction: 10,
+    add_budget: 25,
+    add_goal: 50,
+    claim_challenge: 0, // This will be dynamic
+  };
 
 export function useGamification() {
   const { user } = useUser();
@@ -45,10 +53,14 @@ export function useGamification() {
   const { data: transactions } = useCollection<Transaction>(transactionsQuery);
   const { data: goals } = useCollection<SavingsGoal>(goalsQuery);
 
-  const awardXP = async (action: Action) => {
+  const awardXP = async (action: Action, dynamicXp = 0, dynamicCoins = 0) => {
     if (!userDocRef || !userData) return;
 
-    const xpGained = XP_REWARDS[action];
+    const xpGained = action === 'claim_challenge' ? dynamicXp : XP_REWARDS[action];
+    const coinsGained = action === 'claim_challenge' ? dynamicCoins : COIN_REWARDS[action];
+    
+    if (xpGained === 0 && coinsGained === 0) return;
+
     const currentXp = userData.xp ?? 0;
     let currentLevel = userData.level ?? 1;
     const currentCoins = userData.coins ?? 0;
@@ -56,27 +68,25 @@ export function useGamification() {
     
     const newXp = currentXp + xpGained;
     let newLevel = currentLevel;
-    let newCoins = currentCoins + xpGained; // Award coins equal to XP
+    let newCoins = currentCoins + coinsGained;
     
-    // Check for level up
     const xpForNextLevel = currentLevel * 100;
     if (newXp >= xpForNextLevel) {
       newLevel = currentLevel + 1;
       setLevelUpInfo({ newLevel });
       setShowLevelUp(true);
-      newCoins += 100; // Bonus coins for leveling up
+      newCoins += 100;
     }
 
-    // Check for new badges
     const newlyEarnedBadges: string[] = [];
     badges.forEach(badge => {
-        if (currentBadges.includes(badge.id)) return; // Already have it
+        if (currentBadges.includes(badge.id)) return;
 
         let isEarned = false;
         if(badge.type === 'level' && badge.value) {
             isEarned = newLevel >= badge.value;
         } else if (badge.type === 'transactions' && badge.value) {
-            isEarned = (transactions?.length || 0) + 1 >= badge.value;
+            isEarned = (transactions?.length || 0) + (action === 'add_transaction' ? 1 : 0) >= badge.value;
         } else if (badge.type === 'savings_goal_amount' && badge.value) {
             isEarned = goals?.some(g => g.targetAmount >= badge.value) || false;
         } else if (badge.type === 'xp') {
@@ -102,8 +112,8 @@ export function useGamification() {
     });
 
     toast({
-        title: `+${xpGained} XP!`,
-        description: `You earned experience for your action. Keep it up! 💪`,
+        title: `+${xpGained} XP & +${coinsGained} Coins!`,
+        description: `You earned rewards for your action. Keep it up! 💪`,
     });
   };
 
@@ -114,5 +124,3 @@ export function useGamification() {
     levelUpInfo,
   };
 }
-
-    
